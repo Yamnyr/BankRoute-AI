@@ -1,0 +1,29 @@
+{
+  "project": "BankRoute AI",
+  "dataset": "banking77 (mteb/banking77)",
+  "num_classes": 77,
+  "metrics_comparison": {
+    "Majority_Baseline": {
+      "accuracy": 0.004,
+      "macro_f1": 0.0001034821751953226,
+      "weighted_f1": 3.187250996015936e-05
+    },
+    "TFIDF_LogReg_Baseline": {
+      "accuracy": 0.833,
+      "macro_f1": 0.8311062572651384,
+      "weighted_f1": 0.8354469906077433,
+      "train_duration_sec": 1.9763178825378418
+    },
+    "DistilBERT_FineTuned": {
+      "model_name": "distilbert-base-uncased",
+      "test_accuracy": 0.636,
+      "test_macro_f1": 0.5667108847637642,
+      "test_weighted_f1": 0.5827985934316732,
+      "total_train_time_sec": 238.10492753982544,
+      "avg_latency_ms": 8.609860181808472
+    }
+  },
+  "gain_over_majority_accuracy": "+63.20%",
+  "gain_over_tfidf_accuracy": "+-19.70%",
+  "gain_over_tfidf_macro_f1": "+-0.2644"
+}
