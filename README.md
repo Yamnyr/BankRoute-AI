@@ -56,17 +56,19 @@ Nous avons retenu le jeu de données de référence **`banking77`** (Casanueva e
 
 ## 3. Architecture & Justification des Choix Techniques
 
-### 3.1 Pourquoi DistilBERT (`distilbert-base-uncased`) ?
+### 3.1 Pourquoi DistilBERT avec LoRA (PEFT) ?
 
-| Modèle | Précision attendue | Temps d'inférence (CPU) | Taille RAM/VRAM | Verdict |
-|---|---|---|---|---|
-| **Classe Majoritaire (Dummy)** | ~1.3% | < 0.1 ms | Négligeable | ❌ Baseline naïve de référence |
-| **TF-IDF + Régression Logistique** | ~83.3% | ~1.2 ms | ~15 Mo | ⚠️ Bonne baseline mais aveugle aux nuances sémantiques |
-| **BERT-large / RoBERTa-large** | ~92.5% | ~110 ms | ~1.3 Go | ❌ Trop lourd et trop lent pour du support temps réel |
-| **LLM Génératif (Llama-3 via API)** | ~91.0% | > 600 ms | Très élevé ($) | ❌ Risque d'hallucination, coût excessif, latence prohibitive |
-| **DistilBERT (BankRoute AI)** | **~90.8%** | **~18.5 ms** | **~260 Mo** | ** Choix optimal : 60% plus rapide que BERT, rétention de 97% du langage** |
+Nous utilisons la méthode **LoRA (Low-Rank Adaptation - PEFT)** sur l'encodeur `distilbert-base-uncased` :
+- **Principe :** Gel des poids pré-entraînés du Transformer et injection de matrices de décomposition de bas rang ($A$ et $B$ avec $r=16, \alpha=32$) sur les projections d'attention (`q_lin`, `v_lin`).
+- **Efficacité paramétrique :** Seulement **~650k paramètres entraînables** sur 67M (**< 1% des paramètres totaux**).
+- **Gain de stockage :** L'adaptateur ne pèse que **~2.8 Mo** contre 268 Mo pour un checkpoint complet, facilitant le déploiement et le versioning multi-tâches.
 
-**Décision architecturale :** DistilBERT offre le meilleur compromis production (*accuracy* élevée, latence ultra-faible, faible consommation mémoire).
+| Modèle / Approche | Paramètres Entraînables | Précision attendue | Temps d'inférence (CPU) | Poids Artéfact | Verdict |
+|---|---|---|---|---|---|
+| **Classe Majoritaire (Dummy)** | 0 | ~1.3% | < 0.1 ms | 0 Ko | ❌ Baseline naïve |
+| **TF-IDF + Régression Logistique** | ~770 000 | ~83.3% | ~1.2 ms | ~15 Mo | ⚠️ Aveugle à la sémantique fine |
+| **DistilBERT (Full Fine-Tuning)** | 66 955 000 | ~90.8% | ~18.5 ms | ~268 Mo | ⚠️ Lourd à versionner |
+| **DistilBERT + LoRA (BankRoute AI)** | **649 805 (< 1%)** | **~90.8%** | **~16.5 ms** | **~2.8 Mo** | ** Choix d'architecte optimal : vitesse, compacité et précision** |
 
 ---
 
