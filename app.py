@@ -52,24 +52,39 @@ async def lifespan(app: FastAPI):
         ml_models["department_descriptions"] = {}
 
     # 2. Chargement du modèle et du tokenizer
-    model_source = ARTIFACT_DIR if os.path.exists(os.path.join(ARTIFACT_DIR, "config.json")) else FALLBACK_MODEL
-    print(f">> [Lifespan] Chargement du modèle depuis : {model_source} sur {device}")
+    adapter_file = os.path.join(ARTIFACT_DIR, "adapter_config.json")
+    config_file = os.path.join(ARTIFACT_DIR, "config.json")
     
-    tokenizer = AutoTokenizer.from_pretrained(model_source)
-    if os.path.exists(os.path.join(ARTIFACT_DIR, "config.json")):
-        model = AutoModelForSequenceClassification.from_pretrained(model_source)
-    else:
-        model = AutoModelForSequenceClassification.from_pretrained(
-            model_source,
+    if os.path.exists(adapter_file):
+        from peft import PeftModel, PeftConfig
+        print(f">> [Lifespan] Adaptateur LoRA détecté dans {ARTIFACT_DIR}")
+        peft_config = PeftConfig.from_pretrained(ARTIFACT_DIR)
+        base_name = peft_config.base_model_name_or_path or FALLBACK_MODEL
+        tokenizer = AutoTokenizer.from_pretrained(ARTIFACT_DIR if os.path.exists(os.path.join(ARTIFACT_DIR, "tokenizer.json")) else base_name)
+        base_model = AutoModelForSequenceClassification.from_pretrained(
+            base_name,
             num_labels=len(ml_models["id2label"]) if ml_models["id2label"] else 77
         )
+        model = PeftModel.from_pretrained(base_model, ARTIFACT_DIR)
+        ml_models["model_name"] = f"DistilBERT-Banking77-LoRA (r={peft_config.r})"
+    elif os.path.exists(config_file):
+        print(f">> [Lifespan] Modèle complet (Full Checkpoint) détecté dans {ARTIFACT_DIR}")
+        tokenizer = AutoTokenizer.from_pretrained(ARTIFACT_DIR)
+        model = AutoModelForSequenceClassification.from_pretrained(ARTIFACT_DIR)
+        ml_models["model_name"] = "DistilBERT-Banking77-FineTuned"
+    else:
+        print(f">> [Lifespan] Mode Fallback : chargement de {FALLBACK_MODEL}")
+        tokenizer = AutoTokenizer.from_pretrained(FALLBACK_MODEL)
+        model = AutoModelForSequenceClassification.from_pretrained(
+            FALLBACK_MODEL,
+            num_labels=len(ml_models["id2label"]) if ml_models["id2label"] else 77
+        )
+        ml_models["model_name"] = "DistilBERT-Base-Uncased"
     
     model.to(device)
     model.eval()
-    
     ml_models["tokenizer"] = tokenizer
     ml_models["model"] = model
-    ml_models["model_name"] = "DistilBERT-Banking77-FineTuned"
     
     # Préchauffage (warmup) du modèle
     dummy_input = tokenizer("Test warmup query", return_tensors="pt", max_length=64, truncation=True).to(device)

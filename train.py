@@ -270,9 +270,10 @@ def compute_metrics(eval_pred):
     }
 
 
-def train_deep_learning_model(train_data, val_data, test_data, id2label, label2id, model_name="distilbert-base-uncased", num_epochs=3):
+def train_deep_learning_model(train_data, val_data, test_data, id2label, label2id, model_name="distilbert-base-uncased", num_epochs=3, use_lora=True):
     print("\n" + "=" * 60)
-    print(f"4. FINE-TUNING TRANSFORMER ({model_name})")
+    mode_str = "PEFT / LoRA (Low-Rank Adaptation)" if use_lora else "Full Fine-Tuning"
+    print(f"4. ENTRAÎNEMENT DU MODÈLE TRANSFORMER ({model_name} · {mode_str})")
     print("=" * 60)
     
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -284,12 +285,32 @@ def train_deep_learning_model(train_data, val_data, test_data, id2label, label2i
     tokenized_val = val_data.map(tokenize_fn, batched=True)
     tokenized_test = test_data.map(tokenize_fn, batched=True)
     
-    model = AutoModelForSequenceClassification.from_pretrained(
+    base_model = AutoModelForSequenceClassification.from_pretrained(
         model_name,
         num_labels=len(id2label),
         id2label={str(k): v for k, v in id2label.items()},
         label2id={v: k for k, v in id2label.items()}
     )
+    
+    if use_lora:
+        from peft import LoraConfig, TaskType, get_peft_model
+        print(">> Configuration de l'adaptateur LoRA (PEFT) :")
+        peft_config = LoraConfig(
+            task_type=TaskType.SEQ_CLS,
+            r=16,
+            lora_alpha=32,
+            lora_dropout=0.1,
+            target_modules=["q_lin", "v_lin"],
+            bias="none",
+            modules_to_save=["classifier", "pre_classifier"]
+        )
+        model = get_peft_model(base_model, peft_config)
+        model.print_trainable_parameters()
+    else:
+        model = base_model
+        total_params = sum(p.numel() for p in model.parameters())
+        trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        print(f"Paramètres totaux : {total_params:,} | Paramètres entraînables : {trainable_params:,}")
     
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
     
@@ -299,7 +320,7 @@ def train_deep_learning_model(train_data, val_data, test_data, id2label, label2i
         num_train_epochs=num_epochs,
         per_device_train_batch_size=32 if torch.cuda.is_available() else 16,
         per_device_eval_batch_size=64 if torch.cuda.is_available() else 32,
-        learning_rate=5e-5,
+        learning_rate=2e-4 if use_lora else 5e-5,
         weight_decay=0.01,
         eval_strategy="epoch",
         save_strategy="epoch",
@@ -414,14 +435,29 @@ def export_artifacts(model, tokenizer, id2label, label2id, baselines_results, dl
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="BankRoute AI Training Pipeline")
+    parser.add_argument("--use_lora", action="store_true", default=True, help="Entraîner avec LoRA (PEFT)")
+    parser.add_argument("--full_finetune", action="store_true", help="Désactiver LoRA et faire un Full Fine-Tuning")
+    parser.add_argument("--epochs", type=int, default=None, help="Nombre d'epochs")
+    args = parser.parse_args()
+
+    use_lora = not args.full_finetune
+
     device = check_environment()
     train_data, val_data, test_data, id2label, label2id, unique_intents = load_and_prepare_data()
     baselines_results = train_baselines(train_data, val_data, test_data)
-    epochs = 2 if not torch.cuda.is_available() else 3
+    
+    if args.epochs is not None:
+        epochs = args.epochs
+    else:
+        epochs = 2 if not torch.cuda.is_available() else 3
+        
     model, tokenizer, dl_results, trainer = train_deep_learning_model(
         train_data, val_data, test_data, id2label, label2id,
         model_name="distilbert-base-uncased",
-        num_epochs=epochs
+        num_epochs=epochs,
+        use_lora=use_lora
     )
     export_artifacts(model, tokenizer, id2label, label2id, baselines_results, dl_results)
 
