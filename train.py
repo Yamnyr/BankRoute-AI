@@ -33,10 +33,13 @@ from transformers import (
 )
 
 # Fixer la graine pour reproductibilité
+
 set_seed(42)
 
-# 1. Configuration des départements bancaires (Routage hiérarchique)
+# 1) Configuration des départements bancaires
+
 DEPARTMENT_MAPPING = {
+
     # 1. Cartes & Sécurité physique
     "activate_my_card": "Cards_Management",
     "card_about_to_expire": "Cards_Management",
@@ -61,6 +64,7 @@ DEPARTMENT_MAPPING = {
     "reverted_card_payment?": "Cards_Management",
     "virtual_card_not_working": "Cards_Management",
 
+
     # 2. Paiements & Virements
     "beneficiary_not_allowed": "Payments_Transfers",
     "cancel_transfer": "Payments_Transfers",
@@ -73,6 +77,7 @@ DEPARTMENT_MAPPING = {
     "transfer_into_account": "Payments_Transfers",
     "transfer_not_received_by_recipient": "Payments_Transfers",
     "transfer_timing": "Payments_Transfers",
+
 
     # 3. Compte & Profil client
     "age_limit": "Account_Profile",
@@ -89,6 +94,7 @@ DEPARTMENT_MAPPING = {
     "why_verify_identity": "Account_Profile",
     "unable_to_verify_identity": "Account_Profile",
 
+
     # 4. Retraits & Distributeurs ATM
     "atm_support": "Cash_ATM",
     "cash_withdrawal_charge": "Cash_ATM",
@@ -97,6 +103,7 @@ DEPARTMENT_MAPPING = {
     "pending_cash_withdrawal": "Cash_ATM",
     "wrong_amount_of_cash_received": "Cash_ATM",
     "wrong_exchange_rate_for_cash_withdrawal": "Cash_ATM",
+
 
     # 5. Recharges & Dépôts
     "automatic_top_up": "Top_Up_Deposits",
@@ -111,6 +118,7 @@ DEPARTMENT_MAPPING = {
     "top_up_reverted": "Top_Up_Deposits",
     "topping_up_by_card": "Top_Up_Deposits",
 
+
     # 6. Devises & Taux de change / Remboursements
     "exchange_charge": "Currency_Exchange",
     "exchange_rate": "Currency_Exchange",
@@ -119,6 +127,7 @@ DEPARTMENT_MAPPING = {
     "Refund_not_showing_up": "Currency_Exchange",
     "request_refund": "Currency_Exchange",
     "transaction_charged_twice": "Currency_Exchange",
+
 
     # 7. Services Digitaux & Compatibilité
     "apple_pay_or_google_pay": "Digital_Services",
@@ -170,10 +179,7 @@ def load_and_prepare_data():
     test_labels = list(raw_dataset["test"]["label"])
     test_label_texts = list(raw_dataset["test"]["label_text"])
     
-    # Créer les dictionnaires d'indexation à partir des ids bruts du dataset.
-    # IMPORTANT : ne pas retrier les labels par ordre alphabétique ici, sous peine de
-    # désynchroniser id2label/label2id (utilisés pour nommer les prédictions) des ids
-    # numériques réels sur lesquels le Trainer entraîne le modèle (colonne "label" brute).
+
     raw_id_to_text = dict(zip(train_labels + test_labels, train_label_texts + test_label_texts))
     unique_intents = [raw_id_to_text[i] for i in sorted(raw_id_to_text)]
     id2label = {i: label for i, label in raw_id_to_text.items()}
@@ -183,6 +189,7 @@ def load_and_prepare_data():
     print(f"Total exemples de test         : {len(test_texts)}")
     print(f"Nombre d'intentions (classes)  : {len(unique_intents)}")
     print(f"Nombre de départements         : {len(DEPARTMENT_DESCRIPTIONS)}")
+
     
     # Split Train / Validation propre sans fuite (90% train, 10% val sur le split d'entraînement)
     train_val_split = raw_dataset["train"].train_test_split(test_size=0.1, seed=42)
@@ -190,7 +197,7 @@ def load_and_prepare_data():
     val_data = train_val_split["test"]
     test_data = raw_dataset["test"]
     
-    # Si on est sur CPU, sous-échantillonnage maîtrisé et documenté conformément à la règle 4
+  
     if not torch.cuda.is_available():
         print(">> Mode CPU détecté : sous-échantillonnage stratifié assumé (3 500 exemples train, 500 val, 1 000 test) pour garantir un entraînement rapide et reproductible.")
         train_data = train_data.shuffle(seed=42).select(range(min(3500, len(train_data))))
@@ -214,8 +221,9 @@ def train_baselines(train_data, val_data, test_data):
     y_train = train_data["label"]
     X_test = test_data["text"]
     y_test = test_data["label"]
+
     
-    # Baseline 1 : Dummy Classifier (Classe majoritaire)
+    # Baseline 1 : Dummy Classifier 
     dummy = DummyClassifier(strategy="most_frequent")
     dummy.fit(X_train, y_train)
     y_pred_dummy = dummy.predict(X_test)
@@ -227,6 +235,7 @@ def train_baselines(train_data, val_data, test_data):
     print(f"  - Accuracy     : {dummy_acc * 100:.2f}%")
     print(f"  - Macro F1     : {dummy_f1_macro:.4f}")
     print(f"  - Weighted F1  : {dummy_f1_weighted:.4f}")
+
     
     # Baseline 2 : TF-IDF + Régression Logistique
     print(f"\n[Baseline 2 - TF-IDF (unigram+bigram) + Logistic Regression]")
@@ -355,6 +364,7 @@ def train_deep_learning_model(train_data, val_data, test_data, id2label, label2i
     train_result = trainer.train()
     total_train_time = time.time() - start_train_time
     print(f"Entraînement terminé en {total_train_time:.2f} s ({total_train_time/60:.2f} min)")
+
     
     # Évaluation complète sur le jeu de test
     print("\n" + "=" * 60)
@@ -397,13 +407,14 @@ def export_artifacts(model, tokenizer, id2label, label2id, baselines_results, dl
     print("=" * 60)
     
     os.makedirs(output_dir, exist_ok=True)
+
     
-    # 1. Sauvegarde du modèle et du tokenizer
+    # 1) Sauvegarde du modèle et du tokenizer
     model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
     print(f" Modèle et Tokenizer sauvegardés dans {output_dir}")
     
-    # 2. Sauvegarde du mapping des intentions et des départements
+    # 2) Sauvegarde du mapping des intentions et des départements
     intent_metadata = {
         "total_intents": len(id2label),
         "total_departments": len(DEPARTMENT_DESCRIPTIONS),
@@ -419,7 +430,7 @@ def export_artifacts(model, tokenizer, id2label, label2id, baselines_results, dl
         json.dump(intent_metadata, f, indent=2, ensure_ascii=False)
     print(f" Mapping hiérarchique sauvegardé dans {mapping_path}")
     
-    # 3. Sauvegarde du rapport comparatif des métriques
+    # 3) Sauvegarde du rapport comparatif des métriques
     comparison_summary = {
         "project": "BankRoute AI",
         "dataset": "banking77 (mteb/banking77)",
@@ -458,8 +469,7 @@ def main():
     if args.epochs is not None:
         epochs = args.epochs
     else:
-        # 3 epochs laisse l'adaptateur LoRA sous-entraîné (val accuracy encore en forte
-        # hausse) : 91.0% de test accuracy n'est atteint qu'à partir de ~10 epochs sur GPU.
+
         epochs = 2 if not torch.cuda.is_available() else 10
         
     model, tokenizer, dl_results, trainer = train_deep_learning_model(

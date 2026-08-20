@@ -1,29 +1,32 @@
 # BankRoute AI - Dépendances de Production & d'Entraînement
 # MLDL M2 - Projet Final IPSSI
 
-# Versions figées sur l'environnement où le pipeline a été validé (entraînement +
-# API), pour une installation reproductible. torch est pinné sans le suffixe CUDA
-# (+cu128) : ce suffixe dépend de l'index PyTorch utilisé à l'installation (voir
-# https://pytorch.org/get-started/locally/) et n'est pas résolvable depuis PyPI seul.
 
 # Framework Web & API Asynchrone
+
 fastapi==0.135.1
 uvicorn[standard]==0.42.0
 pydantic==2.12.5
 httpx==0.28.1
 
+
 # Deep Learning & NLP
+
 torch==2.11.0
 transformers==5.5.0
 datasets==5.0.1
 peft==0.20.0
 accelerate==1.13.0
 
+
 # Machine Learning & Métriques
+
 scikit-learn==1.9.0
 numpy==2.2.6
 pandas==2.3.3
 
+
 # Visualisation & Analyse
+
 matplotlib==3.10.7
 seaborn==0.13.2

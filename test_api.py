@@ -25,9 +25,12 @@ def run_tests():
     passed_tests = 0
     total_tests = 0
 
+
     # -------------------------------------------------------------
     # TEST 1 : Health Check & Métadonnées
-    # -------------------------------------------------------------
+    # ---------------------------------------------------------------
+
+
     total_tests += 1
     print("\n[TEST 1] Vérification de l'état de santé (/health)")
     try:
@@ -43,9 +46,12 @@ def run_tests():
     except Exception as e:
         print(f" ÉCHEC Test 1 : {e}")
 
-    # -------------------------------------------------------------
+
+    # --------------------------------------------------------------
     # TEST 2 : Catalogue des intentions (/intents)
     # -------------------------------------------------------------
+
+
     total_tests += 1
     print("\n[TEST 2] Consultation du catalogue des intentions (/intents)")
     try:
@@ -63,6 +69,7 @@ def run_tests():
     # -------------------------------------------------------------
     # TEST 3 : Prédictions métiers nominales (POST /predict)
     # -------------------------------------------------------------
+
     nominal_queries = [
         {
             "text": "I lost my credit card while traveling abroad, how can I block it immediately?",
@@ -124,9 +131,12 @@ def run_tests():
         except Exception as e:
             print(f"  ÉCHEC Cas {i} : {e}")
 
+
     # -------------------------------------------------------------
     # TEST 4 : Traitement par lot (POST /predict/batch)
+
     # -------------------------------------------------------------
+
     total_tests += 1
     print("\n[TEST 4] Validation du traitement par lot (POST /predict/batch)")
     try:
@@ -153,9 +163,11 @@ def run_tests():
     except Exception as e:
         print(f" ÉCHEC Test 4 : {e}")
 
+
     # -------------------------------------------------------------
     # TEST 5 : Rejets stricts 422 (Validation Pydantic)
     # -------------------------------------------------------------
+
     invalid_cases = [
         {
             "name": "Texte vide",
@@ -202,9 +214,11 @@ def run_tests():
         except Exception as e:
             print(f"  ÉCHEC Rejet 422-{i} : {e}")
 
+
     # -------------------------------------------------------------
     # TEST 6 : Benchmark de latence (p50, p95)
     # -------------------------------------------------------------
+
     total_tests += 1
     print("\n[TEST 6] Benchmark de performance & latence d'inférence")
     try:
@@ -228,9 +242,13 @@ def run_tests():
     except Exception as e:
         print(f" ÉCHEC Test 6 : {e}")
 
+
+
     # -------------------------------------------------------------
     # BILAN FINAL
     # -------------------------------------------------------------
+
+    
     print("\n" + "=" * 70)
     print(f"RÉSULTAT DES TESTS : {passed_tests} / {total_tests} validés ({passed_tests/total_tests*100:.1f}%)")
     print("=" * 70)

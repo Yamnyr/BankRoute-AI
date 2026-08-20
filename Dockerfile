@@ -1,4 +1,5 @@
-# BankRoute AI - Dockerfile de Déploiement en Production
+# BankRoute AI Dockerfile de Déploiement en Production
+
 FROM python:3.11-slim
 
 # Variables d'environnement
@@ -15,10 +16,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copie et installation des dépendances Python
-# --extra-index-url pointe vers les wheels CPU-only de PyTorch : sans ça, pip installe
-# la variante CUDA par défaut (image mesurée à 9.47 Go, librairies NVIDIA inutiles dans
-# ce conteneur qui n'a pas de GPU) au lieu de la variante CPU (image mesurée à 2.9 Go).
+
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
 
