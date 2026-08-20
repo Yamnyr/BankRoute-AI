@@ -109,6 +109,7 @@ DEPARTMENT_MAPPING = {
     "top_up_failed": "Top_Up_Deposits",
     "top_up_limits": "Top_Up_Deposits",
     "top_up_reverted": "Top_Up_Deposits",
+    "topping_up_by_card": "Top_Up_Deposits",
 
     # 6. Devises & Taux de change / Remboursements
     "exchange_charge": "Currency_Exchange",
@@ -117,12 +118,15 @@ DEPARTMENT_MAPPING = {
     "extra_charge_on_statement": "Currency_Exchange",
     "Refund_not_showing_up": "Currency_Exchange",
     "request_refund": "Currency_Exchange",
+    "transaction_charged_twice": "Currency_Exchange",
 
     # 7. Services Digitaux & Compatibilité
     "apple_pay_or_google_pay": "Digital_Services",
     "disposable_card_limits": "Digital_Services",
     "supported_cards_and_currencies": "Digital_Services",
-    "fiat_currency_support": "Digital_Services"
+    "fiat_currency_support": "Digital_Services",
+    "lost_or_stolen_phone": "Digital_Services",
+    "visa_or_mastercard": "Digital_Services"
 }
 
 DEPARTMENT_DESCRIPTIONS = {
@@ -166,10 +170,14 @@ def load_and_prepare_data():
     test_labels = list(raw_dataset["test"]["label"])
     test_label_texts = list(raw_dataset["test"]["label_text"])
     
-    # Créer les dictionnaires d'indexation
-    unique_intents = sorted(list(set(train_label_texts + test_label_texts)))
-    id2label = {i: label for i, label in enumerate(unique_intents)}
-    label2id = {label: i for i, label in enumerate(unique_intents)}
+    # Créer les dictionnaires d'indexation à partir des ids bruts du dataset.
+    # IMPORTANT : ne pas retrier les labels par ordre alphabétique ici, sous peine de
+    # désynchroniser id2label/label2id (utilisés pour nommer les prédictions) des ids
+    # numériques réels sur lesquels le Trainer entraîne le modèle (colonne "label" brute).
+    raw_id_to_text = dict(zip(train_labels + test_labels, train_label_texts + test_label_texts))
+    unique_intents = [raw_id_to_text[i] for i in sorted(raw_id_to_text)]
+    id2label = {i: label for i, label in raw_id_to_text.items()}
+    label2id = {label: i for i, label in raw_id_to_text.items()}
     
     print(f"Total exemples d'entraînement : {len(train_texts)}")
     print(f"Total exemples de test         : {len(test_texts)}")
@@ -437,8 +445,7 @@ def export_artifacts(model, tokenizer, id2label, label2id, baselines_results, dl
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="BankRoute AI Training Pipeline")
-    parser.add_argument("--use_lora", action="store_true", default=True, help="Entraîner avec LoRA (PEFT)")
-    parser.add_argument("--full_finetune", action="store_true", help="Désactiver LoRA et faire un Full Fine-Tuning")
+    parser.add_argument("--full_finetune", action="store_true", help="Désactiver LoRA et faire un Full Fine-Tuning (par défaut : LoRA/PEFT)")
     parser.add_argument("--epochs", type=int, default=None, help="Nombre d'epochs")
     args = parser.parse_args()
 
@@ -451,7 +458,9 @@ def main():
     if args.epochs is not None:
         epochs = args.epochs
     else:
-        epochs = 2 if not torch.cuda.is_available() else 3
+        # 3 epochs laisse l'adaptateur LoRA sous-entraîné (val accuracy encore en forte
+        # hausse) : 91.0% de test accuracy n'est atteint qu'à partir de ~10 epochs sur GPU.
+        epochs = 2 if not torch.cuda.is_available() else 10
         
     model, tokenizer, dl_results, trainer = train_deep_learning_model(
         train_data, val_data, test_data, id2label, label2id,

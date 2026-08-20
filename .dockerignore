@@ -1,0 +1,16 @@
+.git
+.gitignore
+.gitattributes
+__pycache__/
+*.py[cod]
+training_output/
+.ipynb_checkpoints/
+*.ipynb
+MLDL_M2_Projet_Final_Bareme.md
+MLDL_M2_Projet_Final_Enonce.md
+README.md
+.env
+.venv
+env/
+venv/
+ENV/

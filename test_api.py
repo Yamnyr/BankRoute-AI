@@ -110,7 +110,11 @@ def run_tests():
             assert res["predicted_intent"] is not None
             assert res["confidence"] > 0.0
             assert len(res["top_candidates"]) == 3
-            
+            assert res["department"] == item["expected_dept"], (
+                f"Département attendu '{item['expected_dept']}', reçu '{res['department']}' "
+                f"(intention prédite : {res['predicted_intent']})"
+            )
+
             print(f"  [Cas {i}] Scénario : {item['scenario']}")
             print(f"         Requête   : \"{item['text'][:55]}...\"")
             print(f"         Intention : {res['predicted_intent']} (confiance: {res['confidence']*100:.1f}%)")

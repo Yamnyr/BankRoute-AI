@@ -26,13 +26,13 @@ Dans le secteur bancaire et fintech, le service client reçoit quotidiennement d
 1. Classifier instantanément la requête client parmi **77 intentions bancaires fines**.
 2. Calculer un **score de confiance probabiliste** (Softmax) et identifier les **Top-3 alternatives**.
 3. Router automatiquement le ticket vers l'un des **7 départements opérationnels** de la banque.
-4. Répondre en temps réel (< 25 ms) derrière une **API FastAPI typée et sécurisée**.
+4. Répondre en temps réel (**p50 ≈ 5.9 ms sur GPU**, mesuré en conditions réelles via `test_api.py`) derrière une **API FastAPI typée et sécurisée**.
 
 ```mermaid
 flowchart LR
     A[Message Client\n'I lost my card abroad'] --> B[FastAPI /predict\nPydantic 422 Check]
     B --> C[DistilBERT Fine-Tuned\n77 Intentions]
-    C --> D[Intention : lost_or_stolen_card\nConfiance : 94.8%]
+    C --> D[Intention : lost_or_stolen_card\nConfiance : 16.5%]
     D --> E[Routage : Cards_Management\n'Blocage & Sécurité Cartes']
 ```
 
@@ -60,15 +60,17 @@ Nous avons retenu le jeu de données de référence **`banking77`** (Casanueva e
 
 Nous utilisons la méthode **LoRA (Low-Rank Adaptation - PEFT)** sur l'encodeur `distilbert-base-uncased` :
 - **Principe :** Gel des poids pré-entraînés du Transformer et injection de matrices de décomposition de bas rang ($A$ et $B$ avec $r=16, \alpha=32$) sur les projections d'attention (`q_lin`, `v_lin`).
-- **Efficacité paramétrique :** Seulement **~650k paramètres entraînables** sur 67M (**< 1% des paramètres totaux**).
-- **Gain de stockage :** L'adaptateur ne pèse que **~2.8 Mo** contre 268 Mo pour un checkpoint complet, facilitant le déploiement et le versioning multi-tâches.
+- **Efficacité paramétrique :** **944 717 paramètres entraînables** sur 67 957 402 (**~1.4% des paramètres totaux**, mesuré via `model.print_trainable_parameters()`).
+- **Gain de stockage :** L'adaptateur pèse **~3.78 Mo** (`adapter_model.safetensors`) contre ~268 Mo pour un checkpoint complet, facilitant le déploiement et le versioning multi-tâches.
 
-| Modèle / Approche | Paramètres Entraînables | Précision attendue | Temps d'inférence (CPU) | Poids Artéfact | Verdict |
-|---|---|---|---|---|---|
-| **Classe Majoritaire (Dummy)** | 0 | ~1.3% | < 0.1 ms | 0 Ko | ❌ Baseline naïve |
-| **TF-IDF + Régression Logistique** | ~770 000 | ~83.3% | ~1.2 ms | ~15 Mo | ⚠️ Aveugle à la sémantique fine |
-| **DistilBERT (Full Fine-Tuning)** | 66 955 000 | ~90.8% | ~18.5 ms | ~268 Mo | ⚠️ Lourd à versionner |
-| **DistilBERT + LoRA (BankRoute AI)** | **649 805 (< 1%)** | **~90.8%** | **~16.5 ms** | **~2.8 Mo** | ** Choix d'architecte optimal : vitesse, compacité et précision** |
+| Modèle / Approche | Paramètres Entraînables | Accuracy (test, mesurée) | Poids Artéfact | Verdict |
+|---|---|---|---|---|
+| **Classe Majoritaire (Dummy)** | 0 | 1.30% | 0 Ko | ❌ Baseline naïve |
+| **TF-IDF + Régression Logistique** | ~770 000 | 88.52% | ~15 Mo | ⚠️ Solide mais aveugle à la sémantique fine |
+| **DistilBERT Full Fine-Tuning** | 67 012 685 (100%) | 91.84% | ~256 Mo | ⚠️ +0.81 pt vs LoRA, pour ~68× plus de poids à versionner |
+| **DistilBERT + LoRA (BankRoute AI)** | **944 717 (~1.4%)** | **91.03%** | **~3.78 Mo** | **Retenu : quasi la même accuracy pour une fraction du coût de stockage/déploiement** |
+
+*Full Fine-Tuning mesuré pour de vrai (5 epochs, même run GPU) : 91.84% accuracy / 0.9184 macro F1 / 0.9184 weighted F1, entraîné en 54.7 s. Il bat légèrement LoRA (+0.81 pt d'accuracy) mais produit un checkpoint ~68× plus lourd (256 Mo vs 3.78 Mo) pour un gain marginal — c'est précisément l'arbitrage qui justifie le choix de LoRA pour la production. Le déploiement utilise exclusivement la variante LoRA.*
 
 ---
 
@@ -81,24 +83,27 @@ Les modèles ont été évalués sur le jeu de test indépendant (`held-out test
 
 ### Tableau Comparatif des Résultats
 
-| Modèle | Accuracy | Macro F1 | Weighted F1 | Latence Moyenne / Requête | Gain vs Baseline |
-|---|---|---|---|---|---|
-| **Baseline 1 : Classe Majoritaire** | 0.40 % | 0.0001 | 0.0000 | < 0.1 ms | Référence |
-| **Baseline 2 : TF-IDF + LogReg** | 83.30 % | 0.8311 | 0.8354 | ~1.2 ms | +82.90 % |
-| **BankRoute AI (DistilBERT Fine-Tuned)** | **90.80 %** | **0.9042** | **0.9065** | **~18.5 ms** | **+90.40 %** |
+Chiffres issus de `model_artifact/metrics_summary.json`, généré automatiquement par `train.py` à chaque entraînement (aucune valeur saisie à la main).
+
+| Modèle | Accuracy | Macro F1 | Weighted F1 | Gain vs Baseline |
+|---|---|---|---|---|
+| **Baseline 1 : Classe Majoritaire** | 1.30 % | 0.0003 | 0.0003 | Référence |
+| **Baseline 2 : TF-IDF + LogReg** | 88.52 % | 0.8856 | 0.8857 | +87.22 % |
+| **BankRoute AI (DistilBERT + LoRA)** | **91.03 %** | **0.9103** | **0.9103** | **+89.73 % vs majoritaire, +2.50 % vs TF-IDF** |
+
+Latence : 0.32 ms en moyenne pour l'évaluation batchée sur GPU pendant l'entraînement (`avg_latency_ms` du run), contre **p50 ≈ 5.9 ms / p95 ≈ 6.8 ms** mesurés en conditions réelles via `test_api.py` (requête HTTP individuelle, incluant tokenization + sérialisation JSON + aller-retour réseau local).
 
 ### Analyse des Limites & Confusions Résiduelles
-- **Erreurs observées :** Les quelques confusions subsistantes se situent entre intentions quasi-synonymes (ex: `compromised_card` confondu avec `card_payment_not_recognised`, ou `top_up_failed` avec `pending_top_up`).
-- **Correction par routage hiérarchique :** Même lorsque le modèle hésite entre deux intentions très fines, **elles pointent vers le même département bancaire**, garantissant un routage 100% opérationnel dans plus de 97% des cas.
+- **Erreurs observées :** La suite `test_api.py` a elle-même capturé un exemple réel de confusion sur les 6 cas métiers testés (15/16 tests passés, 93.8%) : *"Why is there an unexpected extra fee charged on my statement for currency exchange?"* a été routé vers `Cards_Management` (intention prédite : `card_payment_wrong_exchange_rate`) au lieu du `Currency_Exchange` attendu — les deux intentions concernent des frais liés au change et sont sémantiquement très proches.
+- **Limite du routage hiérarchique :** Contrairement à une affirmation antérieure non vérifiée, nous n'avons pas mesuré de taux de "sauvetage" département exact sur l'ensemble du test set (77 classes × 3076 exemples) ; l'exemple ci-dessus montre que la confusion peut aussi traverser la frontière département dans certains cas limites. Une mesure systématique (accuracy au niveau département, pas seulement au niveau intention) ferait partie des prochaines itérations.
 
 ---
 
 ## 5. Infrastructure GPU & Dimensionnement
 
-- **Matériel cible :** GPU NVIDIA Tesla T4 (Google Colab / VM de groupe) ou CPU multithreadé optimisé.
-- **Paramètres entraînables :** 66,955,000 paramètres (DistilBERT + Classification Head).
-- **Consommation mémoire à l'inférence :** ~260 Mo VRAM/RAM.
-- **Budget temps de réponse :** Inférence par batch en < 50 ms pour 10 requêtes simultanées.
+- **Matériel utilisé pour ce run :** GPU NVIDIA GeForce RTX 5070 (poste local) — entraînement complet (dataset entier, 10 epochs, LoRA) en **78 s**. Fallback CPU disponible via un sous-échantillonnage documenté dans `train.py` (`load_and_prepare_data`).
+- **Paramètres entraînables :** 944 717 (LoRA + `classifier`/`pre_classifier` non gelés) sur 67 957 402 au total.
+- **Budget temps de réponse mesuré :** p50 ≈ 5.9 ms / p95 ≈ 6.8 ms par requête individuelle via HTTP (`test_api.py`, GPU).
 
 ---
 
@@ -126,42 +131,44 @@ L'API implémente des validateurs Pydantic rigoureux :
 | `POST` | `/predict/batch` | Routage d'une collection de requêtes en un appel | `200 OK` (ou `422`) |
 | `GET` | `/docs` | Documentation interactive Swagger UI / OpenAPI | `200 OK` |
 
-#### Exemple de Requête POST `/predict` :
+#### Exemple de Requête POST `/predict` (capture réelle, non retouchée) :
 ```json
 {
-  "text": "I lost my credit card while traveling abroad, how can I block it?",
+  "text": "I lost my credit card while traveling abroad, how can I block it immediately?",
   "top_k": 3
 }
 ```
 
-#### Exemple de Réponse JSON :
+#### Exemple de Réponse JSON (capture réelle) :
 ```json
 {
-  "query": "I lost my credit card while traveling abroad, how can I block it?",
+  "query": "I lost my credit card while traveling abroad, how can I block it immediately?",
   "predicted_intent": "lost_or_stolen_card",
-  "confidence": 0.9482,
+  "confidence": 0.165,
   "department": "Cards_Management",
   "department_description": "Gestion des cartes physiques/virtuelles, blocage, commande et code PIN",
   "top_candidates": [
     {
       "intent": "lost_or_stolen_card",
-      "confidence": 0.9482,
+      "confidence": 0.165,
       "department": "Cards_Management"
     },
     {
-      "intent": "compromised_card",
-      "confidence": 0.0315,
-      "department": "Cards_Management"
+      "intent": "passcode_forgotten",
+      "confidence": 0.1517,
+      "department": "Account_Profile"
     },
     {
-      "intent": "card_not_working",
-      "confidence": 0.0098,
+      "intent": "pin_blocked",
+      "confidence": 0.1332,
       "department": "Cards_Management"
     }
   ],
-  "inference_time_ms": 16.42
+  "inference_time_ms": 5.88
 }
 ```
+
+*Confiance volontairement basse (16.5%) dans cet exemple réel : c'est un cas représentatif, pas un cas trié sur le volet — voir la section 4 pour la mesure d'accuracy globale.*
 
 ---
 
@@ -174,6 +181,8 @@ Le script `test_api.py` utilise la bibliothèque `httpx` pour valider l'ensemble
 4. **Test 4 (`/predict/batch`)** : Validation du traitement par lot.
 5. **Test 5 (Rejets stricts 422)** : Validation de 6 scénarios d'erreurs d'entrée (texte vide, espaces, types invalides, champ absent, top_k invalide).
 6. **Test 6 (Benchmark de latence)** : Calcul de la latence médiane ($p_{50}$) et du 95e percentile ($p_{95}$).
+
+**Résultat du dernier run (GPU, modèle LoRA) : 15/16 tests validés (93.8%).** L'unique échec est un routage réellement incorrect (voir section 4, Analyse des Limites) — le test le détecte parce qu'il compare le département renvoyé au département métier attendu, et non uniquement le code HTTP.
 
 ---
 

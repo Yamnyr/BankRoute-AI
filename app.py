@@ -113,10 +113,12 @@ app = FastAPI(
 )
 
 # Configuration CORS
+# Note : allow_origins=["*"] est incompatible avec allow_credentials=True (rejeté par
+# les navigateurs). Cette API ne pose pas de cookies/credentials, donc credentials=False.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -271,6 +273,70 @@ def predict_single_query(text: str, top_k: int = 3) -> Dict:
     }
 
 
+def predict_batch_queries(texts: List[str], top_k: int = 3) -> List[Dict]:
+    """Inférence par lot : un seul forward pass tenseur pour toutes les requêtes,
+    au lieu d'une boucle d'inférences unitaires."""
+    model = ml_models.get("model")
+    tokenizer = ml_models.get("tokenizer")
+    device = ml_models.get("device", torch.device("cpu"))
+    id2label = ml_models.get("id2label", {})
+    dept_map = ml_models.get("department_mapping", {})
+    dept_desc = ml_models.get("department_descriptions", {})
+
+    if model is None or tokenizer is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Le modèle n'est pas encore chargé en mémoire."
+        )
+
+    start_time = time.perf_counter()
+
+    inputs = tokenizer(
+        texts,
+        return_tensors="pt",
+        max_length=64,
+        truncation=True,
+        padding=True
+    ).to(device)
+
+    with torch.no_grad():
+        outputs = model(**inputs)
+        probabilities = F.softmax(outputs.logits, dim=-1)
+
+    elapsed_ms = (time.perf_counter() - start_time) * 1000.0
+    per_query_ms = round(elapsed_ms / len(texts), 2)
+
+    results = []
+    for text, probs in zip(texts, probabilities):
+        top_k_probs, top_k_indices = torch.topk(probs, k=min(top_k, probs.shape[-1]))
+
+        top_candidates = []
+        for prob, idx in zip(top_k_probs.tolist(), top_k_indices.tolist()):
+            intent_name = id2label.get(idx, f"intent_{idx}")
+            dept = dept_map.get(intent_name, "General_Support")
+            top_candidates.append({
+                "intent": intent_name,
+                "confidence": round(float(prob), 4),
+                "department": dept
+            })
+
+        best_candidate = top_candidates[0]
+        best_dept = best_candidate["department"]
+        best_dept_desc = dept_desc.get(best_dept, "Support bancaire général")
+
+        results.append({
+            "query": text,
+            "predicted_intent": best_candidate["intent"],
+            "confidence": best_candidate["confidence"],
+            "department": best_dept,
+            "department_description": best_dept_desc,
+            "top_candidates": top_candidates,
+            "inference_time_ms": per_query_ms
+        })
+
+    return results
+
+
 # =====================================================================
 # ENDPOINTS DE L'API FASTAPI
 # =====================================================================
@@ -345,7 +411,7 @@ def predict_batch(request: BatchRoutingRequest):
     Traite une collection de requêtes en une seule requête HTTP.
     """
     start_total = time.perf_counter()
-    results = [predict_single_query(q, top_k=request.top_k) for q in request.queries]
+    results = predict_batch_queries(request.queries, top_k=request.top_k)
     total_ms = (time.perf_counter() - start_total) * 1000.0
     
     return BatchRoutingResponse(
