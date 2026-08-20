@@ -1,0 +1,16 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Training checkpoints & outputs
+training_output/
+.ipynb_checkpoints/
+build_notebook.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/

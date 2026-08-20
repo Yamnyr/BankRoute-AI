@@ -1,0 +1,24 @@
+# BankRoute AI - Dépendances de Production & d'Entraînement
+# MLDL M2 - Projet Final IPSSI
+
+# Framework Web & API Asynchrone
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+pydantic>=2.6.0
+httpx>=0.27.0
+
+# Deep Learning & NLP
+torch>=2.0.0
+transformers>=4.38.0
+datasets>=2.18.0
+peft>=0.9.0
+accelerate>=0.28.0
+
+# Machine Learning & Métriques
+scikit-learn>=1.4.0
+numpy>=1.26.0
+pandas>=2.2.0
+
+# Visualisation & Analyse
+matplotlib>=3.8.0
+seaborn>=0.13.0
