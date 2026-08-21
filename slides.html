@@ -1,0 +1,656 @@
+<title>BankRoute AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0B1420;
+    --bg-2: #0F1B29;
+    --surface: #12202F;
+    --surface-2: #16283A;
+    --border: #24384C;
+    --border-soft: #1B2C3E;
+    --text: #EFF4F8;
+    --text-muted: #9FB2C4;
+    --text-faint: #6C7F92;
+    --accent: #D9A85B;
+    --accent-strong: #EEC183;
+    --accent-dim: #4A3A22;
+    --good: #58C48D;
+    --good-soft: rgba(88,196,141,0.12);
+    --bad: #E58579;
+    --bad-soft: rgba(229,133,121,0.12);
+    --font-display: 'Fraunces', ui-serif, Georgia, serif;
+    --font-body: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    height: 100%;
+  }
+
+  ::selection { background: var(--accent-dim); color: var(--accent-strong); }
+
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .mono { font-family: var(--font-mono); }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; color: var(--text); }
+
+  code.inline {
+    font-family: var(--font-mono);
+    font-size: 0.82em;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 0.05em 0.42em;
+    border-radius: 5px;
+    color: var(--accent-strong);
+  }
+
+  /* ---------- Deck shell ---------- */
+  .deck {
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .deck { scroll-behavior: auto; }
+  }
+
+  .slide {
+    height: 100vh;
+    height: 100dvh;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    padding: clamp(2rem, 5vw, 5rem) clamp(1.5rem, 8vw, 7rem);
+    background:
+      radial-gradient(1200px 700px at 85% -10%, rgba(217,168,91,0.07), transparent 60%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .slide-inner { max-width: 1160px; margin: 0 auto; width: 100%; }
+
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 0.7em;
+    margin-bottom: 1.3rem;
+  }
+  .kicker .idx {
+    display: inline-grid;
+    place-items: center;
+    width: 1.9em;
+    height: 1.9em;
+    border-radius: 50%;
+    border: 1.5px solid var(--accent);
+    font-size: 1rem;
+  }
+
+  /* ---------- Nav chrome ---------- */
+  .chrome {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 30;
+  }
+  .progress-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--border-soft);
+  }
+  .progress-bar .fill {
+    height: 100%;
+    width: 20%;
+    background: var(--accent);
+    transition: width 0.35s ease;
+  }
+  .counter {
+    position: fixed;
+    bottom: 1.6rem;
+    right: 1.8rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    pointer-events: none;
+  }
+  .counter .now { color: var(--accent-strong); font-weight: 600; }
+
+  .dots {
+    position: fixed;
+    right: 1.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    pointer-events: auto;
+    z-index: 31;
+  }
+  .dots button {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+  }
+  .dots button.active { background: var(--accent); border-color: var(--accent); width: 9px; height: 9px; }
+
+  .edge-nav {
+    position: fixed;
+    top: 0; bottom: 0;
+    width: 8%;
+    pointer-events: auto;
+    z-index: 25;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+  .edge-nav.prev { left: 0; }
+  .edge-nav.next { right: 0; }
+
+  @media (max-width: 720px) {
+    .dots { display: none; }
+  }
+
+  /* ---------- Slide 1 : Titre ---------- */
+  #slide-1 { justify-content: center; }
+  .brand-row {
+    display: flex; align-items: baseline; gap: 0.9rem; margin-bottom: 1.6rem;
+  }
+  .brand-mark {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    color: var(--accent);
+    border: 1px solid var(--border);
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    letter-spacing: 0.05em;
+  }
+  h1.title {
+    font-size: clamp(2.6rem, 3vw + 2rem, 4.6rem);
+    font-weight: 600;
+    line-height: 1.02;
+    margin-bottom: 1.1rem;
+  }
+  h1.title em { font-style: italic; color: var(--accent); font-weight: 500; }
+  .subtitle {
+    font-size: clamp(1.05rem, 1vw + 0.9rem, 1.35rem);
+    color: var(--text-muted);
+    max-width: 46ch;
+    margin-bottom: 2.6rem;
+  }
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+    margin-bottom: 2.8rem;
+  }
+  .flow .node {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 0.6rem 1rem;
+    color: var(--text);
+  }
+  .flow .node.accent { border-color: var(--accent); color: var(--accent-strong); }
+  .flow .arrow { color: var(--text-faint); }
+
+  .team-row {
+    display: flex;
+    gap: 2.2rem;
+    flex-wrap: wrap;
+    padding-top: 1.8rem;
+    border-top: 1px solid var(--border-soft);
+  }
+  .team-member .name { font-family: var(--font-display); font-size: 1.1rem; font-weight: 600; }
+  .team-member .role { font-size: 0.83rem; color: var(--text-faint); max-width: 30ch; margin-top: 0.15rem; }
+
+  /* ---------- Stat grid (shared) ---------- */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 2rem 0;
+  }
+  .stat-grid .cell {
+    background: var(--surface);
+    padding: 1.15rem 1.3rem 1.3rem;
+  }
+  .stat-grid .v {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: clamp(1.5rem, 1vw + 1.3rem, 2.1rem);
+    color: var(--text);
+  }
+  .stat-grid .v .unit { font-size: 0.55em; color: var(--text-faint); margin-left: 0.15em; }
+  .stat-grid .cell.accent .v { color: var(--accent-strong); }
+  .stat-grid .cell.good .v { color: var(--good); }
+  .stat-grid .l { margin-top: 0.35rem; font-size: 0.78rem; color: var(--text-faint); }
+
+  /* ---------- Two-col layout ---------- */
+  .cols {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 3rem;
+    align-items: start;
+  }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; gap: 1.8rem; } }
+
+  ul.points { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.85rem; }
+  ul.points li {
+    padding-left: 1.5rem;
+    position: relative;
+    font-size: 1rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+  ul.points li::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0.55em;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  ul.points li strong { color: var(--text); font-weight: 600; }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.4rem 1.6rem;
+  }
+  .panel + .panel { margin-top: 1rem; }
+  .panel .lbl {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.7rem;
+    display: block;
+  }
+
+  h2.slide-title {
+    font-size: clamp(1.8rem, 1.3vw + 1.5rem, 2.6rem);
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    max-width: 20ch;
+  }
+
+  /* ---------- code / json block ---------- */
+  .jsonblock {
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    line-height: 1.65;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.1rem 1.3rem;
+    color: var(--text-muted);
+    overflow-x: auto;
+  }
+  .jsonblock .k { color: var(--text-faint); }
+  .jsonblock .v { color: var(--accent-strong); }
+  .jsonblock .s { color: var(--good); }
+
+  /* ---------- Endpoint table ---------- */
+  .endpoints { display: flex; flex-direction: column; gap: 0.55rem; }
+  .endpoint-row {
+    display: grid;
+    grid-template-columns: 70px 1fr auto;
+    gap: 0.9rem;
+    align-items: center;
+    padding: 0.55rem 0.2rem;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 0.9rem;
+  }
+  .verb {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 5px;
+    text-align: center;
+  }
+  .verb.get { color: #7FB4E0; background: rgba(127,180,224,0.12); }
+  .verb.post { color: var(--accent-strong); background: var(--accent-dim); }
+  .endpoint-row .path { font-family: var(--font-mono); color: var(--text); }
+  .endpoint-row .desc { color: var(--text-faint); font-size: 0.82rem; }
+
+  /* ---------- Test list ---------- */
+  .test-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .test-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-size: 0.87rem;
+  }
+  .test-row .mark {
+    width: 1.3em; height: 1.3em;
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    flex: none;
+  }
+  .test-row.pass .mark { background: var(--good-soft); color: var(--good); }
+  .test-row.fail .mark { background: var(--bad-soft); color: var(--bad); }
+  .test-row .label { color: var(--text-muted); }
+  .test-row.fail .label { color: var(--text); }
+
+  .confusion-strip {
+    display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+    font-family: var(--font-mono); font-size: 0.82rem; margin-top: 0.9rem;
+  }
+  .confusion-strip .box {
+    padding: 0.4rem 0.65rem; border-radius: 7px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--text-muted);
+  }
+  .confusion-strip .box.bad { border-color: var(--bad); color: var(--bad); background: var(--bad-soft); }
+  .confusion-strip .arrow { color: var(--text-faint); }
+
+  /* ---------- Bonus / limits grid ---------- */
+  .bl-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.6rem;
+  }
+  @media (max-width: 900px) { .bl-grid { grid-template-columns: 1fr; } }
+  .bl-col .colhead {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.9rem;
+  }
+  .bl-col.bonus .colhead { color: var(--good); }
+  .bl-col.limits .colhead { color: var(--bad); }
+
+  footer.credit {
+    position: absolute;
+    bottom: 1.6rem;
+    left: clamp(1.5rem, 8vw, 7rem);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-faint);
+  }
+</style>
+
+<div class="chrome">
+  <div class="progress-bar"><div class="fill" id="progressFill"></div></div>
+  <div class="counter"><span class="now" id="counterNow">01</span> / 05</div>
+  <div class="dots" id="dots">
+    <button data-i="0" class="active" aria-label="Aller à la diapositive 1"></button>
+    <button data-i="1" aria-label="Aller à la diapositive 2"></button>
+    <button data-i="2" aria-label="Aller à la diapositive 3"></button>
+    <button data-i="3" aria-label="Aller à la diapositive 4"></button>
+    <button data-i="4" aria-label="Aller à la diapositive 5"></button>
+  </div>
+  <button class="edge-nav prev" id="prevZone" aria-label="Diapositive précédente"></button>
+  <button class="edge-nav next" id="nextZone" aria-label="Diapositive suivante"></button>
+</div>
+
+<main class="deck" id="deck">
+
+  <!-- SLIDE 1 : Contexte -->
+  <section class="slide" id="slide-1">
+    <div class="slide-inner">
+      <div class="brand-row">
+        <span class="brand-mark">MLDL M2 · IPSSI · MIA5 26.1</span>
+      </div>
+      <h1 class="title">BankRoute AI — router le support bancaire <em>en temps réel</em></h1>
+      <p class="subtitle">Un service de Deep Learning derrière une API FastAPI qui identifie l'intention d'un client parmi 77 motifs bancaires et route le ticket vers le bon département, avec un score de confiance.</p>
+
+      <div class="flow">
+        <span class="node">"I lost my card abroad"</span>
+        <span class="arrow">→</span>
+        <span class="node accent">DistilBERT + LoRA · 77 intentions</span>
+        <span class="arrow">→</span>
+        <span class="node">Cards_Management</span>
+      </div>
+
+      <div class="team-row">
+        <div class="team-member">
+          <div class="name">Corentin</div>
+          <div class="role">Data Pipeline &amp; Modélisation ML/DL</div>
+        </div>
+        <div class="team-member">
+          <div class="name">Quentin</div>
+          <div class="role">Architecture logicielle &amp; service FastAPI</div>
+        </div>
+        <div class="team-member">
+          <div class="name">Marine</div>
+          <div class="role">Tests, déploiement &amp; narration</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 2 : Données & Modélisation -->
+  <section class="slide" id="slide-2">
+    <div class="slide-inner">
+      <span class="kicker"><span class="idx">01</span> Corentin · Data Pipeline &amp; Modélisation</span>
+      <h2 class="slide-title">Une mesure honnête, du Dummy à LoRA</h2>
+
+      <div class="cols">
+        <div>
+          <ul class="points">
+            <li><strong>banking77</strong> — 13 069 requêtes réelles, 77 intentions, split 90/10 train/val + test held-out jamais touché avant l'évaluation finale.</li>
+            <li><strong>Baseline Dummy</strong> (classe majoritaire) : 1.30 % — confirme un dataset ~équilibré, pas de triche possible.</li>
+            <li><strong>Baseline TF-IDF + LogReg</strong> : 88.52 % — plafond purement lexical, en 3 secondes d'entraînement.</li>
+            <li><strong>DistilBERT + LoRA</strong> (r=16, α=32, sur <code class="inline">q_lin</code>/<code class="inline">v_lin</code>) : 91.03 % accuracy pour seulement <strong>~1.4 %</strong> des paramètres entraînés.</li>
+          </ul>
+        </div>
+        <div>
+          <div class="stat-grid">
+            <div class="cell accent"><div class="v tnum">91.03<span class="unit">%</span></div><div class="l">Accuracy DistilBERT+LoRA</div></div>
+            <div class="cell good"><div class="v tnum">95.51<span class="unit">%</span></div><div class="l">Accuracy département</div></div>
+            <div class="cell"><div class="v tnum">1.4<span class="unit">%</span></div><div class="l">Params entraînés</div></div>
+            <div class="cell"><div class="v tnum">3.78<span class="unit">Mo</span></div><div class="l">Poids adaptateur</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 3 : Service FastAPI -->
+  <section class="slide" id="slide-3">
+    <div class="slide-inner">
+      <span class="kicker"><span class="idx">02</span> Quentin · Architecture logicielle</span>
+      <h2 class="slide-title">Un service typé, sécurisé, chargé une seule fois</h2>
+
+      <div class="cols">
+        <div>
+          <div class="panel">
+            <span class="lbl">Endpoints</span>
+            <div class="endpoints">
+              <div class="endpoint-row"><span class="verb get">GET</span><span class="path">/health</span><span class="desc">Statut &amp; modèle chargé</span></div>
+              <div class="endpoint-row"><span class="verb get">GET</span><span class="path">/intents</span><span class="desc">77 intentions × 7 départements</span></div>
+              <div class="endpoint-row"><span class="verb post">POST</span><span class="path">/predict</span><span class="desc">Routage unitaire + Top-3</span></div>
+              <div class="endpoint-row"><span class="verb post">POST</span><span class="path">/predict/batch</span><span class="desc">Lot, un seul forward pass</span></div>
+              <div class="endpoint-row"><span class="verb get">GET</span><span class="path">/docs</span><span class="desc">Swagger UI interactif</span></div>
+            </div>
+          </div>
+          <ul class="points" style="margin-top:1.3rem;">
+            <li><strong>Lifespan FastAPI</strong> : modèle + tokenizer chargés une fois au démarrage, préchauffés.</li>
+            <li><strong>Pydantic strict</strong> : texte vide, espaces seuls, type corrompu, <code class="inline">top_k</code> hors limites → <strong>422</strong> systématique.</li>
+            <li><strong>Enrichissement métier</strong> : le modèle ne sort qu'une intention — l'API la mappe vers son <strong>département</strong> (et sa description) via <code class="inline">DEPARTMENT_MAPPING</code>, sur les 77 intentions comme sur le Top-3.</li>
+          </ul>
+        </div>
+        <div>
+          <span class="lbl mono" style="color:var(--text-faint); font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; display:block; margin-bottom:0.6rem;">POST /predict — capture réelle</span>
+          <div class="jsonblock">{<br>
+&nbsp;&nbsp;<span class="k">"predicted_intent"</span>: <span class="s">"lost_or_stolen_card"</span>,<br>
+&nbsp;&nbsp;<span class="k">"confidence"</span>: <span class="v">0.165</span>,<br>
+&nbsp;&nbsp;<span class="k">"department"</span>: <span class="s">"Cards_Management"</span>,<br>
+&nbsp;&nbsp;<span class="k">"top_candidates"</span>: [<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{ <span class="k">"intent"</span>: <span class="s">"lost_or_stolen_card"</span>, <span class="k">"confidence"</span>: <span class="v">0.165</span> },<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{ <span class="k">"intent"</span>: <span class="s">"passcode_forgotten"</span>, <span class="k">"confidence"</span>: <span class="v">0.1517</span> },<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{ <span class="k">"intent"</span>: <span class="s">"pin_blocked"</span>, <span class="k">"confidence"</span>: <span class="v">0.1332</span> }<br>
+&nbsp;&nbsp;],<br>
+&nbsp;&nbsp;<span class="k">"inference_time_ms"</span>: <span class="v">5.83</span><br>
+}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 4 : Tests, Latence, Déploiement -->
+  <section class="slide" id="slide-4">
+    <div class="slide-inner">
+      <span class="kicker"><span class="idx">03</span> Marine · Tests, déploiement &amp; narration</span>
+      <h2 class="slide-title">Prouvé en HTTP, pas juste affirmé</h2>
+
+      <div class="cols">
+        <div>
+          <div class="test-list">
+            <div class="test-row pass"><span class="mark">✓</span><span class="label">/health &amp; /intents — catalogue cohérent</span></div>
+            <div class="test-row pass"><span class="mark">✓</span><span class="label">5/6 scénarios métiers routés correctement</span></div>
+            <div class="test-row fail"><span class="mark">✕</span><span class="label">1 confusion sémantique réelle (voir ci-dessous)</span></div>
+            <div class="test-row pass"><span class="mark">✓</span><span class="label">6/6 rejets 422 (texte vide, types, top_k...)</span></div>
+            <div class="test-row pass"><span class="mark">✓</span><span class="label">/predict/batch — lot traité en un appel</span></div>
+          </div>
+          <div class="confusion-strip">
+            <span class="box">"extra fee... currency exchange"</span>
+            <span class="arrow">→</span>
+            <span class="box bad">Cards_Management</span>
+            <span class="arrow">≠</span>
+            <span class="box">Currency_Exchange attendu</span>
+          </div>
+        </div>
+        <div>
+          <div class="stat-grid">
+            <div class="cell accent"><div class="v tnum">15<span class="unit">/16</span></div><div class="l">Tests httpx validés</div></div>
+            <div class="cell"><div class="v tnum">6.73<span class="unit">ms</span></div><div class="l">Latence p50 (GPU, HTTP)</div></div>
+            <div class="cell"><div class="v tnum">9.34<span class="unit">ms</span></div><div class="l">Latence p95 (GPU, HTTP)</div></div>
+            <div class="cell"><div class="v tnum">88.4<span class="unit">s</span></div><div class="l">Entraînement complet GPU</div></div>
+          </div>
+          <div class="panel">
+            <span class="lbl">Conteneurisation</span>
+            <p style="margin:0; color:var(--text-muted); font-size:0.9rem; line-height:1.6;">Dockerfile avec wheels PyTorch CPU dédiés, <code class="inline">HEALTHCHECK</code> automatisé, port dynamique pour compatibilité Render/HF Spaces/local.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 5 : Bonus & Limites -->
+  <section class="slide" id="slide-5">
+    <div class="slide-inner">
+      <span class="kicker"><span class="idx">04</span> Bilan</span>
+      <h2 class="slide-title">Ce qu'on revendique, ce qu'on ferait en plus</h2>
+
+      <div class="bl-grid">
+        <div class="bl-col bonus">
+          <div class="colhead">Bonus revendiqués</div>
+          <ul class="points">
+            <li>Routage hiérarchique 77 → 7 départements, mesuré (95.51 % de sauvetage)</li>
+            <li>Gestion 422 exhaustive, prouvée par tests négatifs</li>
+            <li>Benchmarking p50/p95 en conditions réelles</li>
+            <li>Conteneurisation Docker + healthcheck production-ready</li>
+          </ul>
+        </div>
+        <div class="bl-col limits">
+          <div class="colhead">Limites reconnues</div>
+          <ul class="points">
+            <li>Confusion résiduelle sur intentions sémantiquement proches (frontière département franchie dans ~4.5 % des cas)</li>
+            <li>Déterminisme GPU non forcé — variance de run à run de ±0.3-0.5 pt, assumée</li>
+            <li>Avec une semaine de plus : escalade humaine si confiance &lt; 0.65, quantization ONNX/INT8, support multilingue, monitoring du data drift</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <footer class="credit">BankRoute AI · Soutenance MLDL M2 · IPSSI</footer>
+  </section>
+
+</main>
+
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var deck = document.getElementById('deck');
+  var dots = Array.prototype.slice.call(document.querySelectorAll('.dots button'));
+  var counterNow = document.getElementById('counterNow');
+  var progressFill = document.getElementById('progressFill');
+  var current = 0;
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function setActive(i) {
+    current = i;
+    dots.forEach(function (d, di) { d.classList.toggle('active', di === i); });
+    counterNow.textContent = pad(i + 1);
+    progressFill.style.width = (((i + 1) / slides.length) * 100) + '%';
+  }
+
+  function goTo(i) {
+    i = Math.max(0, Math.min(slides.length - 1, i));
+    slides[i].scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+  }
+
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+          setActive(slides.indexOf(entry.target));
+        }
+      });
+    }, { threshold: [0.6] });
+    slides.forEach(function (s) { observer.observe(s); });
+  }
+
+  dots.forEach(function (d) {
+    d.addEventListener('click', function () { goTo(parseInt(d.dataset.i, 10)); });
+  });
+
+  document.getElementById('prevZone').addEventListener('click', function () { goTo(current - 1); });
+  document.getElementById('nextZone').addEventListener('click', function () { goTo(current + 1); });
+
+  window.addEventListener('keydown', function (e) {
+    if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].indexOf(e.key) !== -1) { e.preventDefault(); goTo(current + 1); }
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp'].indexOf(e.key) !== -1) { e.preventDefault(); goTo(current - 1); }
+    else if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    else if (e.key === 'End') { e.preventDefault(); goTo(slides.length - 1); }
+  });
+
+  setActive(0);
+})();
+</script>
