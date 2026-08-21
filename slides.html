@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BankRoute AI · Présentation Soutenance MLDL M2</title>
+  <title>BankRoute AI · Soutenance MLDL M2</title>
   <style>
     :root {
       --bg-dark: #090d16;
@@ -71,8 +71,8 @@
       opacity: 0;
       visibility: hidden;
       transform: translateX(30px);
-      transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
-      padding: 40px 60px 80px 60px;
+      transition: opacity 0.35s ease, transform 0.35s ease, visibility 0.35s;
+      padding: 35px 55px 75px 55px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -92,56 +92,56 @@
       background: rgba(59, 130, 246, 0.15);
       border: 1px solid rgba(59, 130, 246, 0.3);
       color: var(--primary-light);
-      padding: 6px 14px;
+      padding: 5px 12px;
       border-radius: 9999px;
-      font-size: 0.85rem;
-      font-weight: 600;
+      font-size: 0.8rem;
+      font-weight: 700;
       letter-spacing: 0.05em;
       text-transform: uppercase;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       width: fit-content;
     }
 
     .slide-title {
-      font-size: 2.3rem;
+      font-size: 2.1rem;
       font-weight: 800;
       color: var(--text);
       line-height: 1.2;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       letter-spacing: -0.02em;
     }
 
     .slide-subtitle {
-      font-size: 1.15rem;
+      font-size: 1.05rem;
       color: var(--text-muted);
-      margin-bottom: 28px;
+      margin-bottom: 20px;
     }
 
     /* Layout Grids */
     .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 24px;
+      gap: 18px;
     }
 
     .grid-3 {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
+      gap: 16px;
     }
 
     .grid-4 {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
+      gap: 14px;
     }
 
     /* Cards */
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 22px;
+      border-radius: 12px;
+      padding: 18px;
       display: flex;
       flex-direction: column;
       transition: transform 0.2s ease, border-color 0.2s ease;
@@ -149,7 +149,6 @@
 
     .card:hover {
       border-color: rgba(59, 130, 246, 0.4);
-      transform: translateY(-2px);
     }
 
     .card-highlight {
@@ -158,10 +157,10 @@
     }
 
     .card-title {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: 700;
       color: var(--text);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -176,9 +175,9 @@
     }
 
     .card p, .card li {
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       color: var(--text-muted);
-      line-height: 1.5;
+      line-height: 1.45;
     }
 
     .card ul {
@@ -187,33 +186,33 @@
 
     .card ul li {
       position: relative;
-      padding-left: 18px;
-      margin-bottom: 6px;
+      padding-left: 16px;
+      margin-bottom: 5px;
     }
 
     .card ul li::before {
       content: "•";
       color: var(--primary-light);
       position: absolute;
-      left: 4px;
+      left: 2px;
       font-weight: bold;
     }
 
     /* Metric Stat Box */
     .stat-box {
       text-align: center;
-      padding: 16px;
+      padding: 12px 16px;
       background: rgba(15, 23, 42, 0.6);
       border: 1px solid var(--border);
       border-radius: 10px;
     }
 
     .stat-value {
-      font-size: 1.9rem;
+      font-size: 1.75rem;
       font-weight: 800;
       color: var(--accent-light);
       line-height: 1.1;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     .stat-value-primary {
@@ -221,19 +220,74 @@
     }
 
     .stat-label {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       font-weight: 600;
     }
 
+    /* Flow Box Visual */
+    .flow-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-top: 10px;
+    }
+
+    .flow-step {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      text-align: center;
+      flex: 1;
+    }
+
+    .flow-step-title {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .flow-step-val {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .flow-arrow {
+      color: var(--primary-light);
+      font-weight: 800;
+      font-size: 1.2rem;
+    }
+
+    /* Code Block / JSON snippet */
+    pre.code-json {
+      background: #060911;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+      font-size: 0.78rem;
+      color: #93c5fd;
+      overflow-x: auto;
+      line-height: 1.4;
+    }
+
     /* Tables */
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
-      font-size: 0.9rem;
+      margin-top: 6px;
+      font-size: 0.85rem;
     }
 
     th {
@@ -241,12 +295,12 @@
       color: var(--text);
       font-weight: 600;
       text-align: left;
-      padding: 10px 14px;
+      padding: 8px 12px;
       border-bottom: 1px solid var(--border);
     }
 
     td {
-      padding: 10px 14px;
+      padding: 8px 12px;
       border-bottom: 1px solid rgba(30, 41, 59, 0.5);
       color: var(--text-muted);
     }
@@ -263,9 +317,9 @@
     /* Tags */
     .tag {
       display: inline-block;
-      padding: 3px 8px;
-      border-radius: 6px;
-      font-size: 0.75rem;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 0.72rem;
       font-weight: 600;
       margin-right: 4px;
       margin-bottom: 4px;
@@ -281,7 +335,7 @@
       bottom: 0;
       left: 0;
       width: 100%;
-      padding: 16px 60px;
+      padding: 12px 55px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -291,27 +345,27 @@
     }
 
     .footer-left {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       color: var(--text-muted);
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .footer-nav {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
     }
 
     .btn-nav {
       background: var(--bg-card);
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 6px 14px;
-      border-radius: 8px;
+      padding: 5px 12px;
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 600;
       transition: background 0.2s, border-color 0.2s;
     }
@@ -322,10 +376,10 @@
     }
 
     .slide-counter {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 700;
       color: var(--text-muted);
-      min-width: 60px;
+      min-width: 50px;
       text-align: center;
     }
 
@@ -345,7 +399,7 @@
         transform: none !important;
         page-break-after: always;
         height: 100vh;
-        padding: 40px !important;
+        padding: 30px !important;
       }
     }
   </style>
@@ -360,18 +414,18 @@
   <!-- Slides Container -->
   <div class="slides-container">
 
-    <!-- ==================== SLIDE 1 ==================== -->
+    <!-- ==================== SLIDE 1 : CONTEXTE ==================== -->
     <div class="slide active" id="slide-1">
-      <div class="slide-badge">Projet Final MLDL M2 · IPSSI (MIA5 26.1)</div>
+      <div class="slide-badge">Slide 1 · Contexte Métier & Flow</div>
       <h1 class="slide-title">🏦 BankRoute AI</h1>
       <p class="slide-subtitle">Routage Intelligent du Support Bancaire par Deep Learning en Production</p>
 
-      <div class="grid-2" style="margin-bottom: 20px;">
+      <div class="grid-2" style="margin-bottom: 14px;">
         <div class="card">
           <div class="card-title card-title-primary">🎯 Le Défi Métier</div>
-          <p style="margin-bottom: 10px;"><strong>Contexte :</strong> Des dizaines de milliers de sollicitations quotidiennes par chat et email dans le secteur bancaire.</p>
-          <p style="margin-bottom: 10px;"><strong>La friction :</strong> Un mauvais aiguillage génère de l'attente client, de l'insatisfaction et un surcoût de transfert entre services.</p>
-          <p><strong>La solution BankRoute AI :</strong> Classification instantanée parmi <strong>77 intentions fines</strong> et routage vers <strong>7 départements opérationnels</strong> en <strong>< 6 ms</strong>.</p>
+          <p style="margin-bottom: 8px;"><strong>Le constat :</strong> Des dizaines de milliers de sollicitations quotidiennes (chat, emails, réclamations).</p>
+          <p style="margin-bottom: 8px;"><strong>La friction :</strong> Un mauvais aiguillage génère de l'attente, de la frustration et un surcoût opérationnel.</p>
+          <p><strong>La solution BankRoute AI :</strong> Classification instantanée parmi <strong>77 intentions fines</strong> et routage vers <strong>7 départements</strong> en <strong>< 6 ms</strong>.</p>
         </div>
 
         <div class="card card-highlight">
@@ -384,78 +438,49 @@
         </div>
       </div>
 
-      <div class="grid-3">
-        <div class="stat-box">
-          <div class="stat-value stat-value-primary">77</div>
-          <div class="stat-label">Intentions Bancaires Précises</div>
+      <!-- Flow Visuel de Routage -->
+      <div class="flow-container">
+        <div class="flow-step">
+          <div class="flow-step-title">Message Client</div>
+          <div class="flow-step-val">"I lost my card abroad"</div>
         </div>
-        <div class="stat-box">
-          <div class="stat-value">7</div>
-          <div class="stat-label">Départements Opérationnels</div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-step">
+          <div class="flow-step-title">FastAPI /predict</div>
+          <div class="flow-step-val" style="color: var(--accent-light);">Pydantic (422 Check)</div>
         </div>
-        <div class="stat-box">
-          <div class="stat-value stat-value-primary">< 6 ms</div>
-          <div class="stat-label">Latence Inférence Temps Réel</div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-step">
+          <div class="flow-step-title">DistilBERT + LoRA</div>
+          <div class="flow-step-val" style="color: var(--primary-light);">77 Intentions (5.9 ms)</div>
+        </div>
+        <div class="flow-arrow">➔</div>
+        <div class="flow-step" style="border-color: var(--accent);">
+          <div class="flow-step-title">Routage Métier</div>
+          <div class="flow-step-val" style="color: var(--accent-light);">Cards_Management (94.8%)</div>
         </div>
       </div>
     </div>
 
-    <!-- ==================== SLIDE 2 ==================== -->
+    <!-- ==================== SLIDE 2 : CORENTIN ==================== -->
     <div class="slide" id="slide-2">
-      <div class="slide-badge">Données & Innovation Métier</div>
-      <h1 class="slide-title">📦 Du Dataset Brut au Routage Opérationnel</h1>
-      <p class="slide-subtitle">Structuration sans fuite de données et surcouche de routage hiérarchique</p>
+      <div class="slide-badge">Slide 2 · Corentin</div>
+      <h1 class="slide-title">📦 Données, Baselines & Modélisation LoRA</h1>
+      <p class="slide-subtitle">Structuration sans fuite de données et efficacité paramétrique</p>
 
-      <div class="grid-2">
+      <div class="grid-2" style="margin-bottom: 14px;">
         <div class="card">
-          <div class="card-title card-title-primary">📊 Le Dataset de Référence : banking77</div>
+          <div class="card-title card-title-primary">📊 Dataset banking77 & Split Sans Fuite</div>
           <ul>
-            <li><strong>Volumétrie :</strong> 13 082 requêtes clients réelles étiquetées en anglais.</li>
-            <li><strong>Complexité :</strong> 77 classes très imbriquées (ex: <code>card_not_working</code> vs <code>contactless_not_working</code>).</li>
-            <li><strong>Split sans fuite (Zero Leakage) :</strong>
-              <div style="margin-top: 6px;">
-                <span class="tag tag-blue">Train : 8 993</span>
-                <span class="tag tag-purple">Val : 1 000</span>
-                <span class="tag tag-green">Test Held-Out : 3 076</span>
-              </div>
-            </li>
+            <li><strong>13 082 requêtes réelles</strong> sur 77 classes fines.</li>
+            <li><strong>Split étanche :</strong> Train (8 993) / Val (1 000) / Test indépendant (3 076).</li>
+            <li><strong>Baseline 1 (Majoritaire) :</strong> 1.30 % accuracy / 0.0003 Macro F1.</li>
+            <li><strong>Baseline 2 (TF-IDF + LogReg) :</strong> 88.52 % accuracy / 0.8856 Macro F1.</li>
           </ul>
         </div>
 
         <div class="card card-highlight">
-          <div class="card-title card-title-accent">🏢 Notre Valeur Ajoutée : 7 Départements</div>
-          <p style="margin-bottom: 8px;">Agrégation logique des 77 intentions en services bancaires actionnables :</p>
-          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-            <span class="tag tag-blue">💳 Cards_Management (22)</span>
-            <span class="tag tag-green">💸 Payments_Transfers (11)</span>
-            <span class="tag tag-purple">👤 Account_Profile (13)</span>
-            <span class="tag tag-blue">🏧 Cash_ATM (7)</span>
-            <span class="tag tag-green">📥 Top_Up_Deposits (10)</span>
-            <span class="tag tag-purple">💱 Currency_Exchange (6)</span>
-            <span class="tag tag-blue">📱 Digital_Services (8)</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ==================== SLIDE 3 ==================== -->
-    <div class="slide" id="slide-3">
-      <div class="slide-badge">Architecture & Choix Techniques</div>
-      <h1 class="slide-title">🧠 Pourquoi DistilBERT + LoRA (PEFT) ?</h1>
-      <p class="slide-subtitle">L'arbitrage d'ingénierie : vitesse, légèreté et précision industrielle</p>
-
-      <div class="grid-2" style="margin-bottom: 20px;">
-        <div class="card">
-          <div class="card-title card-title-primary">⚖️ Alternatives Écartées</div>
-          <ul>
-            <li><strong>LLM Génératif (Llama-3 / GPT-4) :</strong> Latence trop lente (> 500 ms vs 5.9 ms), coût récurrent au token, risque d'hallucinations, secret bancaire (RGPD).</li>
-            <li><strong>BERT-large / RoBERTa :</strong> Trop lourd (~1.3 Go) et surdimensionné pour des phrases courtes.</li>
-            <li><strong>DistilBERT :</strong> 60% plus rapide, 40% plus léger, 97% du langage conservé.</li>
-          </ul>
-        </div>
-
-        <div class="card card-highlight">
-          <div class="card-title card-title-accent">⚡ La Puissance de LoRA (r=16, α=32)</div>
+          <div class="card-title card-title-accent">⚡ L'Arbitrage LoRA (r=16, α=32)</div>
           <ul>
             <li><strong>Principe :</strong> Gel du modèle et injection de matrices de bas rang sur <code>q_lin</code> et <code>v_lin</code>.</li>
             <li><strong>Poids entraînés :</strong> Seulement <strong>~944k paramètres (1.4%)</strong> sur 68M.</li>
@@ -464,107 +489,134 @@
         </div>
       </div>
 
+      <div class="grid-4">
+        <div class="stat-box">
+          <div class="stat-value">1.30 %</div>
+          <div class="stat-label">Baseline Majoritaire</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">88.52 %</div>
+          <div class="stat-label">Baseline TF-IDF</div>
+        </div>
+        <div class="stat-box" style="border-color: var(--primary);">
+          <div class="stat-value stat-value-primary">91.03 %</div>
+          <div class="stat-label">Accuracy Intention (77 cls)</div>
+        </div>
+        <div class="stat-box" style="border-color: var(--accent);">
+          <div class="stat-value" style="color: var(--accent-light);">95.51 %</div>
+          <div class="stat-label">Accuracy Département (7 dpts)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 3 : QUENTIN ==================== -->
+    <div class="slide" id="slide-3">
+      <div class="slide-badge">Slide 3 · Quentin</div>
+      <h1 class="slide-title">🛡️ Architecture Logicielle & Service FastAPI</h1>
+      <p class="slide-subtitle">Gestionnaire de lifespan, validation stricte 422 et capture JSON réelle</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title card-title-primary">⚙️ Les Fondations de `app.py`</div>
+          <ul>
+            <li><strong>Lifespan (`@asynccontextmanager`) :</strong> Modèle chargé <strong>une seule fois au démarrage</strong> en RAM/VRAM + préchauffage (*warmup*).</li>
+            <li><strong>Validation Stricte Pydantic (HTTP 422) :</strong> Rejet immédiat des requêtes vides <code>""</code>, espaces seuls <code>"   "</code>, mauvais types ou <code>top_k</code> hors bornes $[1, 10]$.</li>
+            <li><strong>Inférence Batch Vectorisée :</strong> 1 seul forward pass tensoriel PyTorch (3 requêtes traitées en 25 ms au global).</li>
+            <li><strong>Endpoints :</strong> <code>/predict</code>, <code>/predict/batch</code>, <code>/health</code>, <code>/intents</code>, <code>/docs</code>.</li>
+          </ul>
+        </div>
+
+        <div class="card card-highlight">
+          <div class="card-title card-title-accent">📄 Exemple Réel de Réponse JSON (`POST /predict`)</div>
+          <pre class="code-json">{
+  "query": "I lost my credit card while traveling abroad...",
+  "predicted_intent": "lost_or_stolen_card",
+  "confidence": 0.9482,
+  "department": "Cards_Management",
+  "department_description": "Gestion des cartes, blocage, PIN",
+  "top_candidates": [
+    {"intent": "lost_or_stolen_card", "confidence": 0.9482, "department": "Cards_Management"},
+    {"intent": "compromised_card", "confidence": 0.0315, "department": "Cards_Management"},
+    {"intent": "card_not_working", "confidence": 0.0098, "department": "Cards_Management"}
+  ],
+  "inference_time_ms": 5.88
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 4 : MARINE ==================== -->
+    <div class="slide" id="slide-4">
+      <div class="slide-badge">Slide 4 · Marine</div>
+      <h1 class="slide-title">🧪 Validation HTTP, Latence & Docker</h1>
+      <p class="slide-subtitle">Preuve de service automatisée, benchmark de performance et conteneurisation</p>
+
+      <div class="grid-2" style="margin-bottom: 14px;">
+        <div class="card">
+          <div class="card-title card-title-primary">📋 Suite de Tests `test_api.py` (httpx)</div>
+          <ul>
+            <li><strong>15 / 16 tests validés (93.8%)</strong> en conditions réelles.</li>
+            <li><strong>Couverture 422 :</strong> 6 scénarios d'erreurs d'entrée validés.</li>
+            <li><strong>Mesure honnête de l'erreur :</strong> Le test capture une vraie confusion sémantique entre frais de change et de carte (*"unexpected extra fee for currency exchange"*).</li>
+          </ul>
+        </div>
+
+        <div class="card card-highlight">
+          <div class="card-title card-title-accent">🐳 Déploiement Conteneurisé (Docker)</div>
+          <ul>
+            <li><strong>Image optimisée CPU :</strong> Utilisation des wheels PyTorch CPU (taille réduite de 9.5 Go à <strong>2.9 Go</strong>).</li>
+            <li><strong>Healthcheck & Port dynamique :</strong> Support automatique des variables d'environnement (<code>${PORT:-8000}</code>).</li>
+          </ul>
+        </div>
+      </div>
+
       <div class="grid-3">
         <div class="stat-box">
-          <div class="stat-value">1.4 %</div>
-          <div class="stat-label">Poids Entraînés (LoRA)</div>
+          <div class="stat-value stat-value-primary">15 / 16</div>
+          <div class="stat-label">Tests Automatisés Validés</div>
         </div>
         <div class="stat-box">
-          <div class="stat-value stat-value-primary">3.78 Mo</div>
-          <div class="stat-label">Taille de l'Adaptateur</div>
+          <div class="stat-value">5.9 ms</div>
+          <div class="stat-label">Latence Médiane (p50 GPU)</div>
         </div>
         <div class="stat-box">
-          <div class="stat-value">68×</div>
-          <div class="stat-label">Plus Léger que le Full Checkpoint</div>
+          <div class="stat-value stat-value-primary">6.8 ms</div>
+          <div class="stat-label">Latence 95e pct (p95)</div>
         </div>
       </div>
     </div>
 
-    <!-- ==================== SLIDE 4 ==================== -->
-    <div class="slide" id="slide-4">
-      <div class="slide-badge">Mesure Honnête & Résultats</div>
-      <h1 class="slide-title">📈 Évaluation sur le Test Set Indépendant</h1>
-      <p class="slide-subtitle">Comparaison transparente contre deux baselines et analyse d'erreur</p>
-
-      <div class="card" style="margin-bottom: 20px;">
-        <table>
-          <thead>
-            <tr>
-              <th>Modèle / Approche</th>
-              <th>Accuracy Test</th>
-              <th>Macro F1</th>
-              <th>Weighted F1</th>
-              <th>Poids Fichier</th>
-              <th>Latence Inférence</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>1. Classe Majoritaire (Dummy)</strong></td>
-              <td>1.30 %</td>
-              <td>0.0003</td>
-              <td>0.0003</td>
-              <td>0 Ko</td>
-              <td>< 0.1 ms</td>
-            </tr>
-            <tr>
-              <td><strong>2. TF-IDF + Logistic Regression</strong></td>
-              <td>88.52 %</td>
-              <td>0.8856</td>
-              <td>0.8857</td>
-              <td>~15 Mo</td>
-              <td>~1.2 ms</td>
-            </tr>
-            <tr class="highlight-row">
-              <td><strong>3. BankRoute AI (DistilBERT + LoRA)</strong></td>
-              <td><strong>91.03 %</strong></td>
-              <td><strong>0.9103</strong></td>
-              <td><strong>0.9103</strong></td>
-              <td><strong>3.78 Mo</strong></td>
-              <td><strong>~5.9 ms (GPU)</strong></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="card">
-        <div class="card-title card-title-primary">🔍 Analyse Honnête d'un Cas Limite Réel</div>
-        <p><strong>Exemple capturé par <code>test_api.py</code> :</strong> <em>"Why is there an unexpected extra fee charged on my statement for currency exchange?"</em></p>
-        <p style="margin-top: 6px; color: var(--text-muted);">Prédit : <code>card_payment_wrong_exchange_rate</code> (Cards) au lieu de <code>Currency_Exchange</code>. Les notions de frais de carte et de change s'entrecroisent. <strong>Solution production :</strong> Escalade humaine si confiance < 65%.</p>
-      </div>
-    </div>
-
-    <!-- ==================== SLIDE 5 ==================== -->
+    <!-- ==================== SLIDE 5 : BILAN ==================== -->
     <div class="slide" id="slide-5">
-      <div class="slide-badge">Production & Démonstration</div>
-      <h1 class="slide-title">🚀 Service FastAPI & Démo en Direct</h1>
-      <p class="slide-subtitle">Architecture de service robuste, typée et prête pour la production</p>
+      <div class="slide-badge">Slide 5 · Bilan & Démo</div>
+      <h1 class="slide-title">🏆 Bonus Revendiqués, Limites & Démo</h1>
+      <p class="slide-subtitle">Synthèse des difficultés assumées et perspectives industrielles</p>
 
-      <div class="grid-2" style="margin-bottom: 20px;">
+      <div class="grid-2" style="margin-bottom: 14px;">
         <div class="card">
-          <div class="card-title card-title-primary">🛡️ Les Piliers du Service `app.py`</div>
+          <div class="card-title card-title-primary">⭐ Bonus Revendiqués (+1 pt)</div>
           <ul>
-            <li><strong>Lifespan (`@asynccontextmanager`) :</strong> Modèle chargé une seule fois au démarrage + préchauffage (*warmup*).</li>
-            <li><strong>Validation Pydantic (422) :</strong> Rejet immédiat des requêtes vides, espaces seuls ou mauvais types.</li>
-            <li><strong>Inférence Batch Vectorisée :</strong> 1 seul forward pass tensoriel PyTorch (3 requêtes en 25 ms au global).</li>
+            <li><strong>Routage Hiérarchique Métier :</strong> 77 intentions $\rightarrow$ 7 départements (<strong>95.51 %</strong> d'accuracy départementale).</li>
+            <li><strong>Gestion Stricte & Prouvée des Erreurs 422 :</strong> Couverture complète validée par <code>test_api.py</code>.</li>
+            <li><strong>Latence Profilée & Conteneurisation :</strong> Mesure $p_{50}/p_{95}$ en direct et Dockerfile de production.</li>
           </ul>
         </div>
 
         <div class="card card-highlight">
           <div class="card-title card-title-accent">🔮 Perspectives (« Avec 1 semaine de plus »)</div>
           <ul>
-            <li><strong>Human-in-the-loop :</strong> File de révision si confiance < 0.65.</li>
+            <li><strong>Human-in-the-loop :</strong> File d'escalade si confiance < 0.65.</li>
             <li><strong>Quantization ONNX INT8 :</strong> Inférence CPU < 3 ms.</li>
-            <li><strong>Support Multilingue :</strong> CamemBERT pour le français.</li>
+            <li><strong>Support Multilingue :</strong> CamemBERT / XLM-RoBERTa pour le français et l'espagnol.</li>
           </ul>
         </div>
       </div>
 
       <div class="card" style="background: rgba(16, 185, 129, 0.1); border-color: var(--accent);">
-        <div class="card-title card-title-accent" style="justify-content: center; font-size: 1.25rem;">
+        <div class="card-title card-title-accent" style="justify-content: center; font-size: 1.15rem;">
           🎬 Place à la Démonstration en Direct
         </div>
-        <p style="text-align: center; color: var(--text); font-size: 1rem;">
+        <p style="text-align: center; color: var(--text); font-size: 0.95rem;">
           Swagger UI : <strong>/docs</strong> &nbsp;|&nbsp; Suite de tests de preuve : <strong>python test_api.py</strong>
         </p>
       </div>
