@@ -4,6 +4,7 @@ API de routage intelligent des requêtes et réclamations bancaires (77 intentio
 """
 
 import os
+import gc
 import json
 import time
 import torch
@@ -14,6 +15,9 @@ from pydantic import BaseModel, Field, field_validator
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+# Limiter le multithreading PyTorch pour réduire la consommation RAM (critique pour Render 512 Mo)
+torch.set_num_threads(1)
 
 # Chemins et constantes
 ARTIFACT_DIR = os.getenv("MODEL_ARTIFACT_DIR", "./model_artifact")
@@ -51,7 +55,7 @@ async def lifespan(app: FastAPI):
         ml_models["department_mapping"] = {}
         ml_models["department_descriptions"] = {}
 
-    # 2. Chargement du modèle et du tokenizer
+    # 2. Chargement du modèle et du tokenizer avec optimisation mémoire (low_cpu_mem_usage)
     adapter_file = os.path.join(ARTIFACT_DIR, "adapter_config.json")
     config_file = os.path.join(ARTIFACT_DIR, "config.json")
     
@@ -63,21 +67,26 @@ async def lifespan(app: FastAPI):
         tokenizer = AutoTokenizer.from_pretrained(ARTIFACT_DIR if os.path.exists(os.path.join(ARTIFACT_DIR, "tokenizer.json")) else base_name)
         base_model = AutoModelForSequenceClassification.from_pretrained(
             base_name,
-            num_labels=len(ml_models["id2label"]) if ml_models["id2label"] else 77
+            num_labels=len(ml_models["id2label"]) if ml_models["id2label"] else 77,
+            low_cpu_mem_usage=True
         )
         model = PeftModel.from_pretrained(base_model, ARTIFACT_DIR)
         ml_models["model_name"] = f"DistilBERT-Banking77-LoRA (r={peft_config.r})"
     elif os.path.exists(config_file):
         print(f">> [Lifespan] Modèle complet (Full Checkpoint) détecté dans {ARTIFACT_DIR}")
         tokenizer = AutoTokenizer.from_pretrained(ARTIFACT_DIR)
-        model = AutoModelForSequenceClassification.from_pretrained(ARTIFACT_DIR)
+        model = AutoModelForSequenceClassification.from_pretrained(
+            ARTIFACT_DIR,
+            low_cpu_mem_usage=True
+        )
         ml_models["model_name"] = "DistilBERT-Banking77-FineTuned"
     else:
         print(f">> [Lifespan] Mode Fallback : chargement de {FALLBACK_MODEL}")
         tokenizer = AutoTokenizer.from_pretrained(FALLBACK_MODEL)
         model = AutoModelForSequenceClassification.from_pretrained(
             FALLBACK_MODEL,
-            num_labels=len(ml_models["id2label"]) if ml_models["id2label"] else 77
+            num_labels=len(ml_models["id2label"]) if ml_models["id2label"] else 77,
+            low_cpu_mem_usage=True
         )
         ml_models["model_name"] = "DistilBERT-Base-Uncased"
     
@@ -86,11 +95,15 @@ async def lifespan(app: FastAPI):
     ml_models["tokenizer"] = tokenizer
     ml_models["model"] = model
     
+    # Nettoyage mémoire RAM immédiat
+    gc.collect()
+    
     # Préchauffage (warmup) du modèle
     dummy_input = tokenizer("Test warmup query", return_tensors="pt", max_length=64, truncation=True).to(device)
     with torch.no_grad():
         _ = model(**dummy_input)
     
+    gc.collect()
     print(">> [Lifespan] Modèle préchauffé et prêt à recevoir du trafic !")
     
     yield
