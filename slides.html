@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BankRoute AI · Présentation Soutenance MLDL M2</title>
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: #131b2e;
+      --bg-card-hover: #1a253f;
+      --primary: #3b82f6;
+      --primary-light: #60a5fa;
+      --accent: #10b981;
+      --accent-light: #34d399;
+      --danger: #ef4444;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #1e293b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Progress bar */
+    .progress-bar-container {
+      width: 100%;
+      height: 4px;
+      background: var(--border);
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 20%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      transition: width 0.3s ease;
+    }
+
+    /* Slides Container */
+    .slides-container {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(30px);
+      transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
+      padding: 40px 60px 80px 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+    }
+
+    /* Slide Header */
+    .slide-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: var(--primary-light);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      width: fit-content;
+    }
+
+    .slide-title {
+      font-size: 2.3rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .slide-subtitle {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+    }
+
+    /* Layout Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: rgba(59, 130, 246, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .card-highlight {
+      background: linear-gradient(145deg, #131d36, #162444);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title-accent {
+      color: var(--accent-light);
+    }
+
+    .card-title-primary {
+      color: var(--primary-light);
+    }
+
+    .card p, .card li {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .card ul {
+      list-style-type: none;
+    }
+
+    .card ul li {
+      position: relative;
+      padding-left: 18px;
+      margin-bottom: 6px;
+    }
+
+    .card ul li::before {
+      content: "•";
+      color: var(--primary-light);
+      position: absolute;
+      left: 4px;
+      font-weight: bold;
+    }
+
+    /* Metric Stat Box */
+    .stat-box {
+      text-align: center;
+      padding: 16px;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .stat-value {
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: var(--accent-light);
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .stat-value-primary {
+      color: var(--primary-light);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: rgba(30, 41, 59, 0.8);
+      color: var(--text);
+      font-weight: 600;
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+      color: var(--text-muted);
+    }
+
+    tr.highlight-row {
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    tr.highlight-row td {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* Tags */
+    .tag {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+
+    .tag-blue { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+    .tag-green { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+    .tag-purple { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; }
+
+    /* Footer & Navigation Controls */
+    .slide-footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      padding: 16px 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(9, 13, 22, 0.95);
+      border-top: 1px solid var(--border);
+      z-index: 50;
+    }
+
+    .footer-left {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .footer-nav {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn-nav {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .btn-nav:hover {
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .slide-counter {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      min-width: 60px;
+      text-align: center;
+    }
+
+    /* Print styles for PDF export */
+    @media print {
+      body {
+        overflow: visible;
+        height: auto;
+      }
+      .slide-footer, .progress-bar-container {
+        display: none !important;
+      }
+      .slide {
+        position: relative !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+        page-break-after: always;
+        height: 100vh;
+        padding: 40px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Progress Bar -->
+  <div class="progress-bar-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- Slides Container -->
+  <div class="slides-container">
+
+    <!-- ==================== SLIDE 1 ==================== -->
+    <div class="slide active" id="slide-1">
+      <div class="slide-badge">Projet Final MLDL M2 · IPSSI (MIA5 26.1)</div>
+      <h1 class="slide-title">🏦 BankRoute AI</h1>
+      <p class="slide-subtitle">Routage Intelligent du Support Bancaire par Deep Learning en Production</p>
+
+      <div class="grid-2" style="margin-bottom: 20px;">
+        <div class="card">
+          <div class="card-title card-title-primary">🎯 Le Défi Métier</div>
+          <p style="margin-bottom: 10px;"><strong>Contexte :</strong> Des dizaines de milliers de sollicitations quotidiennes par chat et email dans le secteur bancaire.</p>
+          <p style="margin-bottom: 10px;"><strong>La friction :</strong> Un mauvais aiguillage génère de l'attente client, de l'insatisfaction et un surcoût de transfert entre services.</p>
+          <p><strong>La solution BankRoute AI :</strong> Classification instantanée parmi <strong>77 intentions fines</strong> et routage vers <strong>7 départements opérationnels</strong> en <strong>< 6 ms</strong>.</p>
+        </div>
+
+        <div class="card card-highlight">
+          <div class="card-title card-title-accent">👥 L'Équipe Projet & Rôles</div>
+          <ul>
+            <li><strong>Corentin :</strong> Data Pipeline, baselines, modélisation LoRA, notebook d'entraînement & métriques.</li>
+            <li><strong>Quentin :</strong> Architecture logicielle FastAPI, gestionnaire de lifespan, validation stricte 422 & batching.</li>
+            <li><strong>Marine :</strong> Suite de tests automatisée `httpx`, benchmark de latence, Dockerfile & documentation.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="stat-box">
+          <div class="stat-value stat-value-primary">77</div>
+          <div class="stat-label">Intentions Bancaires Précises</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">7</div>
+          <div class="stat-label">Départements Opérationnels</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value stat-value-primary">< 6 ms</div>
+          <div class="stat-label">Latence Inférence Temps Réel</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 2 ==================== -->
+    <div class="slide" id="slide-2">
+      <div class="slide-badge">Données & Innovation Métier</div>
+      <h1 class="slide-title">📦 Du Dataset Brut au Routage Opérationnel</h1>
+      <p class="slide-subtitle">Structuration sans fuite de données et surcouche de routage hiérarchique</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title card-title-primary">📊 Le Dataset de Référence : banking77</div>
+          <ul>
+            <li><strong>Volumétrie :</strong> 13 082 requêtes clients réelles étiquetées en anglais.</li>
+            <li><strong>Complexité :</strong> 77 classes très imbriquées (ex: <code>card_not_working</code> vs <code>contactless_not_working</code>).</li>
+            <li><strong>Split sans fuite (Zero Leakage) :</strong>
+              <div style="margin-top: 6px;">
+                <span class="tag tag-blue">Train : 8 993</span>
+                <span class="tag tag-purple">Val : 1 000</span>
+                <span class="tag tag-green">Test Held-Out : 3 076</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="card card-highlight">
+          <div class="card-title card-title-accent">🏢 Notre Valeur Ajoutée : 7 Départements</div>
+          <p style="margin-bottom: 8px;">Agrégation logique des 77 intentions en services bancaires actionnables :</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <span class="tag tag-blue">💳 Cards_Management (22)</span>
+            <span class="tag tag-green">💸 Payments_Transfers (11)</span>
+            <span class="tag tag-purple">👤 Account_Profile (13)</span>
+            <span class="tag tag-blue">🏧 Cash_ATM (7)</span>
+            <span class="tag tag-green">📥 Top_Up_Deposits (10)</span>
+            <span class="tag tag-purple">💱 Currency_Exchange (6)</span>
+            <span class="tag tag-blue">📱 Digital_Services (8)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 3 ==================== -->
+    <div class="slide" id="slide-3">
+      <div class="slide-badge">Architecture & Choix Techniques</div>
+      <h1 class="slide-title">🧠 Pourquoi DistilBERT + LoRA (PEFT) ?</h1>
+      <p class="slide-subtitle">L'arbitrage d'ingénierie : vitesse, légèreté et précision industrielle</p>
+
+      <div class="grid-2" style="margin-bottom: 20px;">
+        <div class="card">
+          <div class="card-title card-title-primary">⚖️ Alternatives Écartées</div>
+          <ul>
+            <li><strong>LLM Génératif (Llama-3 / GPT-4) :</strong> Latence trop lente (> 500 ms vs 5.9 ms), coût récurrent au token, risque d'hallucinations, secret bancaire (RGPD).</li>
+            <li><strong>BERT-large / RoBERTa :</strong> Trop lourd (~1.3 Go) et surdimensionné pour des phrases courtes.</li>
+            <li><strong>DistilBERT :</strong> 60% plus rapide, 40% plus léger, 97% du langage conservé.</li>
+          </ul>
+        </div>
+
+        <div class="card card-highlight">
+          <div class="card-title card-title-accent">⚡ La Puissance de LoRA (r=16, α=32)</div>
+          <ul>
+            <li><strong>Principe :</strong> Gel du modèle et injection de matrices de bas rang sur <code>q_lin</code> et <code>v_lin</code>.</li>
+            <li><strong>Poids entraînés :</strong> Seulement <strong>~944k paramètres (1.4%)</strong> sur 68M.</li>
+            <li><strong>Taille artéfact :</strong> <strong>3.78 Mo</strong> vs ~256 Mo (68× plus léger !).</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="stat-box">
+          <div class="stat-value">1.4 %</div>
+          <div class="stat-label">Poids Entraînés (LoRA)</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value stat-value-primary">3.78 Mo</div>
+          <div class="stat-label">Taille de l'Adaptateur</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">68×</div>
+          <div class="stat-label">Plus Léger que le Full Checkpoint</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 4 ==================== -->
+    <div class="slide" id="slide-4">
+      <div class="slide-badge">Mesure Honnête & Résultats</div>
+      <h1 class="slide-title">📈 Évaluation sur le Test Set Indépendant</h1>
+      <p class="slide-subtitle">Comparaison transparente contre deux baselines et analyse d'erreur</p>
+
+      <div class="card" style="margin-bottom: 20px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Modèle / Approche</th>
+              <th>Accuracy Test</th>
+              <th>Macro F1</th>
+              <th>Weighted F1</th>
+              <th>Poids Fichier</th>
+              <th>Latence Inférence</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1. Classe Majoritaire (Dummy)</strong></td>
+              <td>1.30 %</td>
+              <td>0.0003</td>
+              <td>0.0003</td>
+              <td>0 Ko</td>
+              <td>< 0.1 ms</td>
+            </tr>
+            <tr>
+              <td><strong>2. TF-IDF + Logistic Regression</strong></td>
+              <td>88.52 %</td>
+              <td>0.8856</td>
+              <td>0.8857</td>
+              <td>~15 Mo</td>
+              <td>~1.2 ms</td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>3. BankRoute AI (DistilBERT + LoRA)</strong></td>
+              <td><strong>91.03 %</strong></td>
+              <td><strong>0.9103</strong></td>
+              <td><strong>0.9103</strong></td>
+              <td><strong>3.78 Mo</strong></td>
+              <td><strong>~5.9 ms (GPU)</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title card-title-primary">🔍 Analyse Honnête d'un Cas Limite Réel</div>
+        <p><strong>Exemple capturé par <code>test_api.py</code> :</strong> <em>"Why is there an unexpected extra fee charged on my statement for currency exchange?"</em></p>
+        <p style="margin-top: 6px; color: var(--text-muted);">Prédit : <code>card_payment_wrong_exchange_rate</code> (Cards) au lieu de <code>Currency_Exchange</code>. Les notions de frais de carte et de change s'entrecroisent. <strong>Solution production :</strong> Escalade humaine si confiance < 65%.</p>
+      </div>
+    </div>
+
+    <!-- ==================== SLIDE 5 ==================== -->
+    <div class="slide" id="slide-5">
+      <div class="slide-badge">Production & Démonstration</div>
+      <h1 class="slide-title">🚀 Service FastAPI & Démo en Direct</h1>
+      <p class="slide-subtitle">Architecture de service robuste, typée et prête pour la production</p>
+
+      <div class="grid-2" style="margin-bottom: 20px;">
+        <div class="card">
+          <div class="card-title card-title-primary">🛡️ Les Piliers du Service `app.py`</div>
+          <ul>
+            <li><strong>Lifespan (`@asynccontextmanager`) :</strong> Modèle chargé une seule fois au démarrage + préchauffage (*warmup*).</li>
+            <li><strong>Validation Pydantic (422) :</strong> Rejet immédiat des requêtes vides, espaces seuls ou mauvais types.</li>
+            <li><strong>Inférence Batch Vectorisée :</strong> 1 seul forward pass tensoriel PyTorch (3 requêtes en 25 ms au global).</li>
+          </ul>
+        </div>
+
+        <div class="card card-highlight">
+          <div class="card-title card-title-accent">🔮 Perspectives (« Avec 1 semaine de plus »)</div>
+          <ul>
+            <li><strong>Human-in-the-loop :</strong> File de révision si confiance < 0.65.</li>
+            <li><strong>Quantization ONNX INT8 :</strong> Inférence CPU < 3 ms.</li>
+            <li><strong>Support Multilingue :</strong> CamemBERT pour le français.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card" style="background: rgba(16, 185, 129, 0.1); border-color: var(--accent);">
+        <div class="card-title card-title-accent" style="justify-content: center; font-size: 1.25rem;">
+          🎬 Place à la Démonstration en Direct
+        </div>
+        <p style="text-align: center; color: var(--text); font-size: 1rem;">
+          Swagger UI : <strong>/docs</strong> &nbsp;|&nbsp; Suite de tests de preuve : <strong>python test_api.py</strong>
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Slide Footer Navigation -->
+  <div class="slide-footer">
+    <div class="footer-left">
+      <span>🏦 BankRoute AI · IPSSI MLDL M2</span>
+      <span>•</span>
+      <span>Marine · Corentin · Quentin</span>
+    </div>
+    <div class="footer-nav">
+      <button class="btn-nav" id="prevBtn" onclick="prevSlide()">← Précédent</button>
+      <span class="slide-counter" id="slideCounter">1 / 5</span>
+      <button class="btn-nav" id="nextBtn" onclick="nextSlide()">Suivant →</button>
+    </div>
+  </div>
+
+  <!-- Interactive Slide Navigation Script -->
+  <script>
+    let currentSlide = 1;
+    const totalSlides = 5;
+
+    function showSlide(index) {
+      if (index < 1) index = 1;
+      if (index > totalSlides) index = totalSlides;
+      currentSlide = index;
+
+      document.querySelectorAll('.slide').forEach((slide, i) => {
+        slide.classList.toggle('active', i + 1 === currentSlide);
+      });
+
+      document.getElementById('slideCounter').textContent = `${currentSlide} / ${totalSlides}`;
+      document.getElementById('progressBar').style.width = `${(currentSlide / totalSlides) * 100}%`;
+
+      document.getElementById('prevBtn').style.opacity = currentSlide === 1 ? '0.5' : '1';
+      document.getElementById('nextBtn').style.opacity = currentSlide === totalSlides ? '0.5' : '1';
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides) showSlide(currentSlide + 1);
+    }
+
+    function prevSlide() {
+      if (currentSlide > 1) showSlide(currentSlide - 1);
+    }
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        prevSlide();
+      }
+    });
+
+    // Initialize
+    showSlide(1);
+  </script>
+</body>
+</html>
