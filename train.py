@@ -22,7 +22,7 @@ from datasets import load_dataset
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.dummy import DummyClassifier
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, confusion_matrix
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
@@ -388,20 +388,47 @@ def train_deep_learning_model(train_data, val_data, test_data, id2label, label2i
     print(f"  - Test Macro F1 : {dl_f1_macro:.4f}")
     print(f"  - Test Weight F1: {dl_f1_weighted:.4f}")
     print(f"  - Latence moyenne par requête test : {(eval_duration / len(test_labels)) * 1000:.2f} ms")
-    
+
+    # Matrice de confusion au niveau des 77 intentions (granularité fine)
+    cm_intents = confusion_matrix(test_labels, test_preds, labels=list(range(len(id2label))))
+
+    # Matrice de confusion au niveau des 7 départements métier (agrégation hiérarchique) :
+    # mesure le taux de "sauvetage" quand l'intention prédite est fausse mais le département
+    # de routage reste correct (cf. limite documentée dans le README section 4).
+    department_order = sorted(set(DEPARTMENT_MAPPING.values()))
+    dept_to_idx = {dept: i for i, dept in enumerate(department_order)}
+    true_depts = [dept_to_idx[DEPARTMENT_MAPPING[id2label[int(label)]]] for label in test_labels]
+    pred_depts = [dept_to_idx[DEPARTMENT_MAPPING[id2label[int(pred)]]] for pred in test_preds]
+    cm_departments = confusion_matrix(true_depts, pred_depts, labels=list(range(len(department_order))))
+    department_accuracy = accuracy_score(true_depts, pred_depts)
+
+    print(f"  - Accuracy département (routage hiérarchique) : {department_accuracy * 100:.2f}%")
+
     dl_results = {
         "model_name": model_name,
         "test_accuracy": float(dl_acc),
         "test_macro_f1": float(dl_f1_macro),
         "test_weighted_f1": float(dl_f1_weighted),
+        "department_accuracy": float(department_accuracy),
         "total_train_time_sec": float(total_train_time),
         "avg_latency_ms": float((eval_duration / len(test_labels)) * 1000)
     }
-    
-    return model, tokenizer, dl_results, trainer
+
+    confusion_data = {
+        "intents": {
+            "labels": [id2label[i] for i in range(len(id2label))],
+            "matrix": cm_intents.tolist()
+        },
+        "departments": {
+            "labels": department_order,
+            "matrix": cm_departments.tolist()
+        }
+    }
+
+    return model, tokenizer, dl_results, trainer, confusion_data
 
 
-def export_artifacts(model, tokenizer, id2label, label2id, baselines_results, dl_results, output_dir="./model_artifact"):
+def export_artifacts(model, tokenizer, id2label, label2id, baselines_results, dl_results, confusion_data=None, output_dir="./model_artifact"):
     print("\n" + "=" * 60)
     print(f"6. EXPORT DES ARTÉFACTS DE PRODUCTION ({output_dir})")
     print("=" * 60)
@@ -449,7 +476,14 @@ def export_artifacts(model, tokenizer, id2label, label2id, baselines_results, dl
     with open(metrics_path, "w", encoding="utf-8") as f:
         json.dump(comparison_summary, f, indent=2, ensure_ascii=False)
     print(f" Résumé des métriques sauvegardé dans {metrics_path}")
-    
+
+    # 4) Sauvegarde des matrices de confusion (intentions + départements)
+    if confusion_data is not None:
+        confusion_path = os.path.join(output_dir, "confusion_matrices.json")
+        with open(confusion_path, "w", encoding="utf-8") as f:
+            json.dump(confusion_data, f, indent=2, ensure_ascii=False)
+        print(f" Matrices de confusion (77 intentions + 7 départements) sauvegardées dans {confusion_path}")
+
     print("\n Export complet terminé avec succès !")
 
 
@@ -472,13 +506,13 @@ def main():
 
         epochs = 2 if not torch.cuda.is_available() else 10
         
-    model, tokenizer, dl_results, trainer = train_deep_learning_model(
+    model, tokenizer, dl_results, trainer, confusion_data = train_deep_learning_model(
         train_data, val_data, test_data, id2label, label2id,
         model_name="distilbert-base-uncased",
         num_epochs=epochs,
         use_lora=use_lora
     )
-    export_artifacts(model, tokenizer, id2label, label2id, baselines_results, dl_results)
+    export_artifacts(model, tokenizer, id2label, label2id, baselines_results, dl_results, confusion_data)
 
 
 if __name__ == "__main__":

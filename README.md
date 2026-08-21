@@ -26,7 +26,7 @@ Dans le secteur bancaire et fintech, le service client reçoit quotidiennement d
 1. Classifier instantanément la requête client parmi **77 intentions bancaires fines**.
 2. Calculer un **score de confiance probabiliste** (Softmax) et identifier les **Top-3 alternatives**.
 3. Router automatiquement le ticket vers l'un des **7 départements opérationnels** de la banque.
-4. Répondre en temps réel (**p50 ≈ 5.9 ms sur GPU**, mesuré en conditions réelles via `test_api.py`) derrière une **API FastAPI typée et sécurisée**.
+4. Répondre en temps réel (**p50 ≈ 6.7 ms sur GPU**, mesuré en conditions réelles via `test_api.py`) derrière une **API FastAPI typée et sécurisée**.
 
 ```mermaid
 flowchart LR
@@ -91,19 +91,19 @@ Chiffres issus de `model_artifact/metrics_summary.json`, généré automatiqueme
 | **Baseline 2 : TF-IDF + LogReg** | 88.52 % | 0.8856 | 0.8857 | +87.22 % |
 | **BankRoute AI (DistilBERT + LoRA)** | **91.03 %** | **0.9103** | **0.9103** | **+89.73 % vs majoritaire, +2.50 % vs TF-IDF** |
 
-Latence : 0.32 ms en moyenne pour l'évaluation batchée sur GPU pendant l'entraînement (`avg_latency_ms` du run), contre **p50 ≈ 5.9 ms / p95 ≈ 6.8 ms** mesurés en conditions réelles via `test_api.py` (requête HTTP individuelle, incluant tokenization + sérialisation JSON + aller-retour réseau local).
+Latence : 0.35 ms en moyenne pour l'évaluation batchée sur GPU pendant l'entraînement (`avg_latency_ms` du run), contre **p50 ≈ 6.73 ms / p95 ≈ 9.34 ms** mesurés en conditions réelles via `test_api.py` (requête HTTP individuelle, incluant tokenization + sérialisation JSON + aller-retour réseau local).
 
 ### Analyse des Limites & Confusions Résiduelles
 - **Erreurs observées :** La suite `test_api.py` a elle-même capturé un exemple réel de confusion sur les 6 cas métiers testés (15/16 tests passés, 93.8%) : *"Why is there an unexpected extra fee charged on my statement for currency exchange?"* a été routé vers `Cards_Management` (intention prédite : `card_payment_wrong_exchange_rate`) au lieu du `Currency_Exchange` attendu — les deux intentions concernent des frais liés au change et sont sémantiquement très proches.
-- **Limite du routage hiérarchique :** Contrairement à une affirmation antérieure non vérifiée, nous n'avons pas mesuré de taux de "sauvetage" département exact sur l'ensemble du test set (77 classes × 3076 exemples) ; l'exemple ci-dessus montre que la confusion peut aussi traverser la frontière département dans certains cas limites. Une mesure systématique (accuracy au niveau département, pas seulement au niveau intention) ferait partie des prochaines itérations.
+- **Limite du routage hiérarchique :** Mesure systématique effectuée sur l'ensemble du test set (77 classes × 3076 exemples), en agrégeant les 77 intentions vers les 7 départements via `DEPARTMENT_MAPPING` puis en comparant département prédit vs département réel (`train.py::train_deep_learning_model`, matrice complète exportée dans `model_artifact/confusion_matrices.json`) : **accuracy département = 95.51 %**, contre 91.03 % au niveau intention. Le "sauvetage" par la hiérarchie est donc réel dans la majorité des cas, mais pas systématique : l'exemple ci-dessus montre que la confusion peut aussi traverser la frontière département sur ~4.5 % des cas de test.
 
 ---
 
 ## 5. Infrastructure GPU & Dimensionnement
 
-- **Matériel utilisé pour ce run :** GPU NVIDIA GeForce RTX 5070 (poste local) — entraînement complet (dataset entier, 10 epochs, LoRA) en **78 s**. Fallback CPU disponible via un sous-échantillonnage documenté dans `train.py` (`load_and_prepare_data`).
+- **Matériel utilisé pour ce run :** GPU NVIDIA GeForce RTX 5070 (poste local) — entraînement complet (dataset entier, 10 epochs, LoRA) en **88.41 s**. Fallback CPU disponible via un sous-échantillonnage documenté dans `train.py` (`load_and_prepare_data`).
 - **Paramètres entraînables :** 944 717 (LoRA + `classifier`/`pre_classifier` non gelés) sur 67 957 402 au total.
-- **Budget temps de réponse mesuré :** p50 ≈ 5.9 ms / p95 ≈ 6.8 ms par requête individuelle via HTTP (`test_api.py`, GPU).
+- **Budget temps de réponse mesuré :** p50 ≈ 6.73 ms / p95 ≈ 9.34 ms par requête individuelle via HTTP (`test_api.py`, GPU).
 
 ---
 
@@ -164,7 +164,7 @@ L'API implémente des validateurs Pydantic rigoureux :
       "department": "Cards_Management"
     }
   ],
-  "inference_time_ms": 5.88
+  "inference_time_ms": 5.83
 }
 ```
 

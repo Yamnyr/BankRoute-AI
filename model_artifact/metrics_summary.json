@@ -12,15 +12,16 @@
       "accuracy": 0.8852405721716515,
       "macro_f1": 0.8856337459549891,
       "weighted_f1": 0.8857044613830264,
-      "train_duration_sec": 2.762235164642334
+      "train_duration_sec": 3.0338938236236572
     },
     "DistilBERT_FineTuned": {
       "model_name": "distilbert-base-uncased",
       "test_accuracy": 0.9102730819245773,
       "test_macro_f1": 0.9102507654563313,
       "test_weighted_f1": 0.910275772665981,
-      "total_train_time_sec": 81.15510606765747,
-      "avg_latency_ms": 0.32273070554894495
+      "department_accuracy": 0.9551365409622887,
+      "total_train_time_sec": 88.40532517433167,
+      "avg_latency_ms": 0.350919362007409
     }
   },
   "gain_over_majority_accuracy": "+89.73%",
